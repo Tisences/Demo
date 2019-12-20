@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="bitrate_value">
+        <item>9000000</item>
+        <item>5000000</item>
+        <item>1000000</item>
+        <item>900000</item>
+        <item>800000</item>
+        <item>700000</item>
+        <item>600000</item>
+        <item>500000</item>
+        <item>400000</item>
+    </string-array>
+</resources>

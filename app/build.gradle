@@ -1,0 +1,82 @@
+apply plugin: 'com.android.application'
+
+android {
+    signingConfigs {
+        debug {
+            keyAlias 'android'
+            keyPassword '123456'
+            storeFile file('C:/Users/tisen/Documents/ti.jks')
+            storePassword '123456'
+        }
+        release {
+            keyAlias 'platform'
+            keyPassword '123456'
+            storeFile file('C:/Users/tisen/Desktop/ZD18A/platform_user.jks')
+            storePassword '123456'
+        }
+        q618 {
+            keyAlias 'platform'
+            keyPassword 'android'
+            storeFile file('C:/Users/tisen/Desktop/ZD18A/q618_platform.keystore')
+            storePassword 'android'
+        }
+    }
+    compileSdkVersion 27
+    defaultConfig {
+        applicationId "com.vanzo.demo"
+        minSdkVersion 23
+        targetSdkVersion 27
+        versionCode 3
+        versionName "3.0"
+        flavorDimensions "default"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                cppFlags "-frtti -fexceptions"
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+            debuggable true
+        }
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        a01 {
+            signingConfig signingConfigs.q618
+        }
+    }
+    productFlavors {
+        DEMO {
+            signingConfig signingConfigs.debug
+            manifestPlaceholders = [
+                    sharedUserId: "com.vanzo"
+            ]
+        }
+        ZD18A {
+            signingConfig signingConfigs.q618
+            manifestPlaceholders = [
+                    sharedUserId: "android.uid.system"
+            ]
+        }
+        Q618 {
+            signingConfig signingConfigs.release
+            manifestPlaceholders = [
+                    sharedUserId: "android.uid.system"
+            ]
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    //    testImplementation 'junit:junit:4.12'
+    //    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    //    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    implementation 'com.android.support:support-compat:27.1.1'
+}

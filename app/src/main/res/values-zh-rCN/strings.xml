@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="calendar_time_format_string">%1$4d年%2$02d月%3$02d日 %4$3s %5$02d:%6$02d:%7$02d</string>
+	<string name="sunday">星期日</string>
+	<string name="monday">星期一</string>
+	<string name="tuesday">星期二</string>
+	<string name="wednesday">星期三</string>
+	<string name="thursday">星期四</string>
+	<string name="friday">星期五</string>
+	<string name="saturday">星期六</string>
+	<string name="law_video_bitstream_settings">录像码流设置</string>
+	<string name="law_trans_bitstream_settings">网传码流设置</string>
+	<string name="law_photo_settings">拍照设置</string>
+	<string name="law_back_camera">后置摄像机</string>
+	<string name="law_front_camera">前置摄像机</string>
+	<string name="law_media_settings">媒体设置</string>
+	<string name="law_setting_type_preference_default_value">1</string>
+	<string name="law_setting_size_preference_default_value">720</string>
+	<string name="law_setting_segmentation_preference_default_value">300</string>
+	<string name="law_setting_rate_preference_default_value">20</string>
+	<string name="law_setting_prerecord_preference_default_value">0</string>
+</resources>

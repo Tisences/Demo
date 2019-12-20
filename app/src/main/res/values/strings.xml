@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Demo</string>
+    <string name="calendar_time_format_string">%1$4d %2$02d %3$02d  %4$3s %5$02d:%6$02d:%7$02d </string>
+    <string name="sunday">Sunday</string>
+    <string name="monday">Monday</string>
+    <string name="tuesday">Tuesday</string>
+    <string name="wednesday">Wednesday</string>
+    <string name="thursday">Thursday</string>
+    <string name="friday">Friday</string>
+    <string name="saturday">Saturday</string>
+
+    <string name="law_video_bitstream_settings">Record bitstream settings</string>
+    <string name="law_trans_bitstream_settings">Trans bitstream settings</string>
+    <string name="law_photo_settings">Photo settings</string>
+    <string name="law_back_camera">Back camera</string>
+    <string name="law_front_camera">Front camera</string>
+    <string name="law_media_settings">Media settings</string>
+    <string name="law_setting_type_preference_default_value">1</string>
+    <string name="law_setting_size_preference_default_value">720</string>
+    <string name="law_setting_segmentation_preference_default_value">300</string>
+    <string name="law_setting_rate_preference_default_value">20</string>
+    <string name="law_setting_prerecord_preference_default_value">0</string>
+</resources>
