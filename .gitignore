@@ -55,3 +55,4 @@ gradle/
 gradlew
 gradlew.bat
 app/proguard-rules.pro
+app/.externalNativeBuild

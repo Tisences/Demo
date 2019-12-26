@@ -8,7 +8,9 @@ import android.os.Build;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -60,7 +62,7 @@ public class MediaCodecSaveControl {
 	}
 
 	private String createNewFilePath() {
-		return "sdcard/POC/Media/video/2019-12-19/VID" + System.currentTimeMillis() + ".mp4";
+		return "sdcard/POC/Media/video/2019-12-25/VID_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".mp4";
 //		return "sdcard/DCIM/VID_" + System.currentTimeMillis() + ".mp4";
 	}
 
@@ -207,6 +209,8 @@ public class MediaCodecSaveControl {
 	}
 
 	public void stopSaveVideo() {
+		this.videoDataBlockingQueue = new ArrayBlockingQueue<>(this.videoPreRecordDuration * 2 + 4);
+		currentVideoDataPerSecond = null;
 		isSaving = false;
 		isCheckStage = false;
 		if (muxerSave1 != null) {

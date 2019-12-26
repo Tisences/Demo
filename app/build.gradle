@@ -35,6 +35,9 @@ android {
                 cppFlags "-frtti -fexceptions"
             }
         }
+        ndk {
+            moduleName "VideoUtils"
+        }
     }
     buildTypes {
         release {
@@ -68,6 +71,12 @@ android {
             manifestPlaceholders = [
                     sharedUserId: "android.uid.system"
             ]
+        }
+    }
+    sourceSets { main { jni.srcDirs = ['src/main/jni', 'src/main/cpp'] } }
+    externalNativeBuild {
+        cmake {
+            path file('CMakeLists.txt')
         }
     }
 }

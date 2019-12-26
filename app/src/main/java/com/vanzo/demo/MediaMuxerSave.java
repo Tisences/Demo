@@ -19,6 +19,8 @@ public class MediaMuxerSave {
 	private MediaMuxer muxer;
 	private String path;
 	private boolean isSaving;
+	private boolean isDeleted;
+	private long startSavingMillis = 0;
 
 	MediaMuxerSave(Context context, String path) {
 		this.context = context;
@@ -39,6 +41,7 @@ public class MediaMuxerSave {
 			videoTrack = muxer.addTrack(videoFormat);
 			if (audioTrack >= 0 && videoTrack >= 0) {
 				muxer.start();
+				startSavingMillis = System.currentTimeMillis();
 				isSaving = true;
 			}
 		}
@@ -71,6 +74,9 @@ public class MediaMuxerSave {
 		isSaving = false;
 		if (muxer != null) {
 			muxer.stop();
+			if (System.currentTimeMillis() - startSavingMillis <= 3000) {
+				isDeleted = delete();
+			}
 		}
 	}
 
@@ -78,7 +84,9 @@ public class MediaMuxerSave {
 		if (muxer != null) {
 			muxer.release();
 			muxer = null;
-			scanFile(context, path);
+			if (!isDeleted) {
+				scanFile(context, path);
+			}
 		}
 	}
 

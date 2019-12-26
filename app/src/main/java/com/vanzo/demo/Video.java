@@ -12,6 +12,7 @@ import android.media.MediaFormat;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -23,8 +24,13 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
+import com.vanzo.demo.jni.VideoUtils;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -34,12 +40,12 @@ import java.util.concurrent.Executors;
  *
  * @author Yao
  */
-public class VideoCap extends Activity implements OnClickListener,
+public class Video extends Activity implements OnClickListener,
 		SurfaceHolder.Callback,
 		MediaCodecCenter.MediaCodecCenterCallback,
 		Camera.PreviewCallback {
 
-	public static final String TAG = VideoCap.class.getSimpleName();
+	public static final String TAG = Video.class.getSimpleName();
 	private ImageView startOrStopIcon;
 
 	private Camera camera;
@@ -54,7 +60,8 @@ public class VideoCap extends Activity implements OnClickListener,
 
 	private static final int VIDEO_WIDTH = 1920;
 	private static final int VIDEO_HEIGHT = 1080;
-	private static final int VIDEO_FRAME = 10;
+	private static final int VIDEO_FRAME = 20;
+	private SimpleDateFormat mFormat;
 
 	private static final int VIDEO_CUTOFF_DURATION = 60 * 1000;
 	private static final int VIDEO_PRE_DURATION = 15;
@@ -81,6 +88,10 @@ public class VideoCap extends Activity implements OnClickListener,
 		saveControl = new MediaCodecSaveControl(this, VIDEO_PRE_DURATION);
 		encodeCenter = new MediaCodecCenter(this);
 		encodeCenter.setCenterCallback(this);
+
+		String pattern = "yyyy-MM-dd HH:mm:ss";//日期格式
+		mFormat = new SimpleDateFormat(pattern, Locale.CHINA);
+		VideoUtils.initOsd(VIDEO_WIDTH - 400, VIDEO_HEIGHT - 100, pattern.length(), VIDEO_WIDTH, VIDEO_HEIGHT, 0);
 	}
 
 	private void InitDataResource() {
@@ -121,6 +132,7 @@ public class VideoCap extends Activity implements OnClickListener,
 			camera = null;
 			stopEncoder();
 		}
+		VideoUtils.releaseOsd();
 	}
 
 	@Override
@@ -133,6 +145,7 @@ public class VideoCap extends Activity implements OnClickListener,
 				Parameters params = camera.getParameters();
 				params.setPreviewFormat(ImageFormat.NV21);// 图片格式
 				params.setPreviewSize(1920, 1080);
+				params.setPreviewFpsRange(VIDEO_FRAME, VIDEO_FRAME);
 				camera.setParameters(params);
 				camera.setPreviewCallback(this);
 				camera.startPreview();
@@ -180,7 +193,7 @@ public class VideoCap extends Activity implements OnClickListener,
 			mExecutor = Executors.newSingleThreadExecutor();
 		}
 		try {
-			encodeCenter.init(VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_FRAME, VIDEO_FRAME * VIDEO_WIDTH * VIDEO_HEIGHT / 10);
+			encodeCenter.init(VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_FRAME, VIDEO_FRAME * VIDEO_WIDTH * VIDEO_HEIGHT / 4);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -243,33 +256,50 @@ public class VideoCap extends Activity implements OnClickListener,
 		}
 	}
 
+	private long lastVideoFrameCodedMillis = 0;
+
 	@Override
 	public void onVideoFrameCoded(ByteBuffer buffer, MediaCodec.BufferInfo info) {
 		if (saveControl != null && isEncoding) {
+//			Log.w(TAG, "onVideoFrameCoded " + (System.currentTimeMillis() - lastVideoFrameCodedMillis));
+//			lastVideoFrameCodedMillis = System.currentTimeMillis();
+			byte[] temp = new byte[info.size];
+			buffer.get(temp, info.offset, info.size);
 			MediaCodec.BufferInfo tempInfo = new MediaCodec.BufferInfo();
 			tempInfo.set(info.offset, info.size, info.presentationTimeUs, info.flags);
-			byte[] temp = new byte[tempInfo.size];
-			buffer.get(temp, tempInfo.offset, tempInfo.size);
 			saveControl.addVideoFrameData(temp, tempInfo);
 		}
 	}
 
+	private long lastAudioFrameCodedMillis = 0;
+
 	@Override
 	public void onAudioFrameCoded(ByteBuffer buffer, MediaCodec.BufferInfo info) {
 		if (saveControl != null && isEncoding) {
+//			Log.w(TAG, "onAudioFrameCoded " + (System.currentTimeMillis() - lastAudioFrameCodedMillis));
+//			lastAudioFrameCodedMillis = System.currentTimeMillis();
 			byte[] temp = new byte[info.size];
-			buffer.get(temp);
+			buffer.get(temp, info.offset, info.size);
 			MediaCodec.BufferInfo tempInfo = new MediaCodec.BufferInfo();
 			tempInfo.set(info.offset, info.size, info.presentationTimeUs, info.flags);
 			saveControl.addAudioFrameData(temp, tempInfo);
 		}
 	}
 
+	private long lastPreviewFrameMillis = 0;
+
 	@Override
 	public void onPreviewFrame(byte[] data, Camera camera) {
 		if (data != null && encodeCenter != null && isEncoding) {
+//			Log.w(TAG, "onPreviewFrame " + (System.currentTimeMillis() - lastPreviewFrameMillis));
+//			lastPreviewFrameMillis = System.currentTimeMillis();
 			byte[] nv12 = new byte[data.length];
-			NV21ToNV12(data, nv12, VIDEO_WIDTH, VIDEO_HEIGHT);
+//			byte[] outnv12 = new byte[data.length];
+//			NV21ToNV12(data, nv12, VIDEO_WIDTH, VIDEO_HEIGHT);
+//			long start = SystemClock.uptimeMillis();
+			VideoUtils.addOsd(data, nv12, mFormat.format(new Date()));
+//			long time = SystemClock.uptimeMillis() - start;
+//			Log.w(TAG, "add water mark time=" + time + " ms");
 			encodeCenter.feedVideoFrameData(nv12);
 		}
 	}
