@@ -24,7 +24,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
-import com.vanzo.demo.jni.VideoUtils;
+import com.vanzo.demo.jni.YuvWaterMark;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -91,7 +91,7 @@ public class Video extends Activity implements OnClickListener,
 
 		String pattern = "yyyy-MM-dd HH:mm:ss";//日期格式
 		mFormat = new SimpleDateFormat(pattern, Locale.CHINA);
-		VideoUtils.initOsd(VIDEO_WIDTH - 400, VIDEO_HEIGHT - 100, pattern.length(), VIDEO_WIDTH, VIDEO_HEIGHT, 0);
+		YuvWaterMark.init(VIDEO_WIDTH - 400, VIDEO_HEIGHT - 100, pattern.length(), VIDEO_WIDTH, VIDEO_HEIGHT, 0);
 	}
 
 	private void InitDataResource() {
@@ -132,7 +132,7 @@ public class Video extends Activity implements OnClickListener,
 			camera = null;
 			stopEncoder();
 		}
-		VideoUtils.releaseOsd();
+		YuvWaterMark.release();
 	}
 
 	@Override
@@ -294,10 +294,8 @@ public class Video extends Activity implements OnClickListener,
 //			Log.w(TAG, "onPreviewFrame " + (System.currentTimeMillis() - lastPreviewFrameMillis));
 //			lastPreviewFrameMillis = System.currentTimeMillis();
 			byte[] nv12 = new byte[data.length];
-//			byte[] outnv12 = new byte[data.length];
-//			NV21ToNV12(data, nv12, VIDEO_WIDTH, VIDEO_HEIGHT);
 //			long start = SystemClock.uptimeMillis();
-			VideoUtils.addOsd(data, nv12, mFormat.format(new Date()));
+			YuvWaterMark.addMark(data, nv12, mFormat.format(new Date()));
 //			long time = SystemClock.uptimeMillis() - start;
 //			Log.w(TAG, "add water mark time=" + time + " ms");
 			encodeCenter.feedVideoFrameData(nv12);

@@ -23,34 +23,34 @@ extern "C" {
  * Signature: ()V
  */
 JNIEXPORT void JNICALL
-Java_com_vanzo_demo_jni_VideoUtils_addOsd(JNIEnv *env, jclass type, jbyteArray yuv_in_data,jbyteArray yvu_out_data, jstring date_);
+Java_com_vanzo_demo_jni_YuvWaterMark_addMark(JNIEnv *env, jclass type, jbyteArray yuv_in_data,jbyteArray yvu_out_data, jstring date_);
 
 JNIEXPORT jcharArray JNICALL
-Java_com_vanzo_demo_jni_VideoUtils_argbIntToNV21Byte
+Java_com_vanzo_demo_jni_YuvWaterMark_argbIntToNV21Byte
         (JNIEnv *env, jclass jclazz, jintArray ints, jint width, jint height);
 
 JNIEXPORT jcharArray JNICALL
-Java_com_vanzo_demo_jni_VideoUtils_argbIntToNV12Byte
+Java_com_vanzo_demo_jni_YuvWaterMark_argbIntToNV12Byte
         (JNIEnv *env, jclass jclazz, jintArray ints, jint width, jint height);
 
 JNIEXPORT jcharArray JNICALL
-Java_com_vanzo_demo_jni_VideoUtils_argbIntToGrayNVByte
+Java_com_vanzo_demo_jni_YuvWaterMark_argbIntToGrayNVByte
         (JNIEnv *env, jclass jclazz, jintArray ints, jint width, jint height);
 
 
 JNIEXPORT void JNICALL
-Java_com_vanzo_demo_jni_VideoUtils_nv21ToNv12(JNIEnv *env, jclass type, jbyteArray nv21Src_,
+Java_com_vanzo_demo_jni_YuvWaterMark_nv21ToNv12(JNIEnv *env, jclass type, jbyteArray nv21Src_,
                                               jbyteArray nv12Dest_, jint width, jint height);
 
 
 JNIEXPORT void JNICALL
-Java_com_vanzo_demo_jni_VideoUtils_initOsd(JNIEnv *env, jclass type,
+Java_com_vanzo_demo_jni_YuvWaterMark_init(JNIEnv *env, jclass type,
                                                jint osdOffX,jint osdOffY,jint patternLen
                                               ,jint frameWidth,jint frameHeight,jint rotation
 );
 
 JNIEXPORT void JNICALL
-Java_com_vanzo_demo_jni_VideoUtils_releaseOsd(JNIEnv *env, jclass type);
+Java_com_vanzo_demo_jni_YuvWaterMark_release(JNIEnv *env, jclass type);
 
 #ifdef __cplusplus
 }

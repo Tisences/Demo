@@ -8,10 +8,15 @@ import android.graphics.YuvImage;
 
 import java.io.ByteArrayOutputStream;
 
-public class VideoUtils {
+/**
+ * 给Camera onPreviewFrame回调数据加水印
+ * 支持NV21数据格式 params.setPreviewFormat(ImageFormat.NV21)
+ */
+
+public class YuvWaterMark {
 
 	static {
-		System.loadLibrary("VideoUtils");
+		System.loadLibrary("YuvWaterMark");
 	}
 
 	/**
@@ -24,15 +29,18 @@ public class VideoUtils {
 	 * @param frameHeight 相机高
 	 * @param rotation    旋转角度,0,90,180,270
 	 */
-	public static native void initOsd(int osdOffX, int osdOffY
+	public static native void init(int osdOffX, int osdOffY
 			, int patternLen, int frameWidth, int frameHeight, int rotation);
+
+
+	public static native void setWaterMarkValue(int index, int offX, int offY, String value);
 
 	/**
 	 * 释放内存
 	 */
-	public static native void releaseOsd();
+	public static native void release();
 
-	public static native void addOsd(byte[] yuvInData, byte[] outYvuData, String date);
+	public static native void addMark(byte[] yuvInData, byte[] outYvuData, String date);
 
 
 	/**

@@ -36,7 +36,7 @@ android {
             }
         }
         ndk {
-            moduleName "VideoUtils"
+            moduleName "YuvWaterMark"
         }
     }
     buildTypes {

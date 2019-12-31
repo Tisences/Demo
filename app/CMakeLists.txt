@@ -7,21 +7,21 @@ cmake_minimum_required(VERSION 3.4.1)
 
 
 find_library( # Sets the name of the path variable.
-              log-lib
-              log )
+        log-lib
+        log)
 
 # yuvOsd
 add_library( # Sets the name of the library.
-             VideoUtils
+        YuvWaterMark
 
-             # Sets the library as a shared library.
-             SHARED
+        # Sets the library as a shared library.
+        SHARED
 
-             # Provides a relative path to your source file(s).
-             src/main/cpp/VideoUtils.c )
+        # Provides a relative path to your source file(s).
+        src/main/cpp/VideoUtils.c)
 
 
-target_link_libraries(VideoUtils
-                       ${log-lib}
+target_link_libraries(YuvWaterMark
+        ${log-lib}
 
-                       )
+        )
