@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
@@ -101,6 +102,14 @@ public class Video extends Activity implements OnClickListener,
 		startOrStopIcon.setOnClickListener(this);
 		startOrStopIcon.setImageResource(isRecording ? R.drawable.ic_video_session_stop : R.drawable.ic_video_session_start);
 		findViewById(R.id.cut_icon).setOnClickListener(this);
+		long start = SystemClock.uptimeMillis();
+		Bitmap bitmapValue = YuvWaterMark.fromText("上海市闵行区秀文路898号\n" +
+				"西子国际中心5号楼17楼", 20);
+		Log.w("zts", " width " + bitmapValue.getWidth() + " height " + bitmapValue.getHeight());
+		byte[] one = YuvWaterMark.bitmapToGrayNV(bitmapValue, bitmapValue.getWidth(), bitmapValue.getHeight());
+		YuvWaterMark.setWaterMarkValueByte(1, 100, 100, bitmapValue.getWidth(), bitmapValue.getHeight(), one);
+		long stop = SystemClock.uptimeMillis();
+		Log.w("zts", "init water mark use time " + (stop - start));
 	}
 
 
@@ -288,16 +297,21 @@ public class Video extends Activity implements OnClickListener,
 
 	private long lastPreviewFrameMillis = 0;
 
+	private long addMarkUseMillis = 0;
+	private int count = 0;
+
 	@Override
 	public void onPreviewFrame(byte[] data, Camera camera) {
 		if (data != null && encodeCenter != null && isEncoding) {
 //			Log.w(TAG, "onPreviewFrame " + (System.currentTimeMillis() - lastPreviewFrameMillis));
 //			lastPreviewFrameMillis = System.currentTimeMillis();
 			byte[] nv12 = new byte[data.length];
-//			long start = SystemClock.uptimeMillis();
+			long start = SystemClock.uptimeMillis();
 			YuvWaterMark.addMark(data, nv12, mFormat.format(new Date()));
-//			long time = SystemClock.uptimeMillis() - start;
-//			Log.w(TAG, "add water mark time=" + time + " ms");
+			long time = SystemClock.uptimeMillis() - start;
+			addMarkUseMillis += time;
+			count++;
+			Log.w(TAG, "add water mark time=" + time + " ms " + addMarkUseMillis / count);
 			encodeCenter.feedVideoFrameData(nv12);
 		}
 	}

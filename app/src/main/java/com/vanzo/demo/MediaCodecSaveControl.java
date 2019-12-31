@@ -109,7 +109,9 @@ public class MediaCodecSaveControl {
 			currentVideoDataPerSecond = new VideoDataPerSecond();
 			currentVideoDataPerSecond.videoDataList.add(temp);
 		} else {
-			currentVideoDataPerSecond.videoDataList.add(temp);
+			if (currentVideoDataPerSecond != null) {
+				currentVideoDataPerSecond.videoDataList.add(temp);
+			}
 		}
 	}
 

@@ -25,6 +25,10 @@ int date_len, rotation;
 int waterFrameWidth, waterFrameHeight, waterFrameSize;
 int frame_width, frame_height;
 
+int wz_off_x, wz_off_y;
+jint wz_width, wz_height;
+jbyte *wz_byte;
+
 char *mNumArrays;
 size_t size;
 
@@ -571,31 +575,59 @@ Java_com_vanzo_demo_jni_YuvWaterMark_addMark(
         newFrameW = frame_height;
     }
 
-    //添加时间水印
-    uint16_t mask = 0x8000;
-    uint16_t temp;
-    jbyte *dest = destData;
-    jbyte *start = dest + off_y * newFrameW;
-    for (int i = 0; i < date_len; i++) {
-        int index = getIndex(*(date + i));
-//        char *num = mNumArrays + size * index;
-        jbyte *column = start + i * num_width;
-//        if (!num)
-//            continue;
-        for (int j = 0; j < num_height; j++) {
-            jbyte *destIndex = column + j * newFrameW + off_x;
-            temp = ascii[index][j * 2] << 8 | ascii[index][j * 2 + 1];
-//            char *src = num + j * num_width;
-            for (int k = 0; k < num_width; k++) {
-//                if (*(src + k) != 0) {//黑色背景色
-                if (mask & temp) {
-                    *(destIndex + k) = -1;//水印文字颜色，-21为白色，0为黑色
-                }
-                mask = mask >> 1;
-                if (mask == 0) {
-                    mask = 0x8000;
-                }
+//    //添加时间水印
+//    uint16_t mask = 0x8000;
+//    uint16_t temp;
+//    jbyte *dest = destData;
+//    jbyte *start = dest + off_y * newFrameW;
+//    for (int i = 0; i < date_len; i++) {
+//        int index = getIndex(*(date + i));
+////        char *num = mNumArrays + size * index;
+//        jbyte *column = start + i * num_width;
+////        if (!num)
+////            continue;
+//        for (int j = 0; j < num_height; j++) {
+//            jbyte *destIndex = column + j * newFrameW + off_x;
+//            temp = ascii[index][j * 2] << 8 | ascii[index][j * 2 + 1];
+////            char *src = num + j * num_width;
+//            for (int k = 0; k < num_width; k++) {
+////                if (*(src + k) != 0) {//黑色背景色
+//                if (mask & temp) {
+//                    *(destIndex + k) = -1;//水印文字颜色，-21为白色，0为黑色
 //                }
+//                mask = mask >> 1;
+//                if (mask == 0) {
+//                    mask = 0x8000;
+//                }
+////                }
+//            }
+//        }
+//    }
+//    //添加文字水印
+//    int index = getIndex(*(date + i));
+//    char *num = mNumArrays + size * index;
+//    jbyte *column = start + i * num_width;
+//    for (int j = 0; j < num_height; j++) {
+//        jbyte *destIndex = column + j * newFrameW + off_x;
+//        temp = ascii[index][j * 2] << 8 | ascii[index][j * 2 + 1];
+//        char *src = num + j * num_width;
+//        for (int k = 0; k < num_width; k++) {
+//            if (*(src + k) != 0) {//黑色背景色
+//                *(destIndex + k) = -1;//水印文字颜色，-21为白色，0为黑色
+//            }
+//        }
+//    }
+
+
+    jbyte *dest = destData;
+    jbyte *start = dest + wz_off_y * newFrameW;
+    for (int i = 0; i < wz_height; i++) {
+        jbyte *column = start + i * newFrameW;
+        jbyte *src = wz_byte + i * wz_width;
+        jbyte *destIndex = column + wz_off_x;
+        for (int j = 0; j < wz_width; j++) {
+            if (*(src + j) != 16) {//黑色背景色
+                *(destIndex + j) = -1;//水印文字颜色，-1为白色，0为黑色
             }
         }
     }
@@ -736,4 +768,16 @@ Java_com_vanzo_demo_jni_YuvWaterMark_nv21ToNv12(JNIEnv *env, jclass type, jbyteA
 JNIEXPORT void JNICALL
 Java_com_vanzo_demo_jni_YuvWaterMark_release(JNIEnv *env, jclass type) {
     free(mNumArrays);
+}
+
+JNIEXPORT void JNICALL
+Java_com_vanzo_demo_jni_YuvWaterMark_setWaterMarkValueByte(JNIEnv *env, jclass clazz, jint index,
+                                                           jint off_x, jint off_y, jint mark_width,
+                                                           jint mark_height,
+                                                           jbyteArray mark_value) {
+    wz_byte = (*env)->GetByteArrayElements(env, mark_value, NULL);
+    wz_off_x = off_x;
+    wz_off_y = off_y;
+    wz_width = mark_width;
+    wz_height = mark_height;
 }

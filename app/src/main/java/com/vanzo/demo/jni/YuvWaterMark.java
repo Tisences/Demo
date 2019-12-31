@@ -1,9 +1,13 @@
 package com.vanzo.demo.jni;
 
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
+import android.util.Log;
 
 
 import java.io.ByteArrayOutputStream;
@@ -33,7 +37,17 @@ public class YuvWaterMark {
 			, int patternLen, int frameWidth, int frameHeight, int rotation);
 
 
+	/**
+	 * 设置水印信息
+	 *
+	 * @param index
+	 * @param offX
+	 * @param offY
+	 * @param value
+	 */
 	public static native void setWaterMarkValue(int index, int offX, int offY, String value);
+
+	public static native void setWaterMarkValueByte(int index, int offX, int offY, int mark_width, int mark_height, byte[] mark_value);
 
 	/**
 	 * 释放内存
@@ -165,4 +179,33 @@ public class YuvWaterMark {
 		return tmp;
 	}
 
+	public static Bitmap fromText(String text, float textSize) {
+
+		String[] splits = text.split("\n");
+
+		Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		paint.setTextSize(textSize);
+		paint.setTextAlign(Paint.Align.LEFT);
+		paint.setColor(Color.WHITE);
+
+
+		int width = 0;
+		for (String value : splits) {
+			width = Math.max(width, (int) paint.measureText(value));
+			Log.w("zts", "width " + width);
+		}
+
+		Paint.FontMetricsInt fm = paint.getFontMetricsInt();
+		int height = (fm.descent - fm.ascent) + (int) textSize * (splits.length - 1);
+
+		Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		Canvas canvas = new Canvas(bitmap);
+		canvas.drawColor(Color.BLACK);
+		for (int i = 0; i < splits.length; i++) {
+			canvas.drawText(splits[i], 0, (fm.leading - fm.ascent) + textSize * i, paint);
+		}
+		canvas.save();
+
+		return bitmap;
+	}
 }
