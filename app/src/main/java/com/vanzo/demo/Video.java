@@ -32,6 +32,8 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -66,6 +68,7 @@ public class Video extends Activity implements OnClickListener,
 
 	private static final int VIDEO_CUTOFF_DURATION = 60 * 1000;
 	private static final int VIDEO_PRE_DURATION = 15;
+	private Timer timer;
 
 	@SuppressLint("HandlerLeak")
 	private Handler curHandler = new Handler() {
@@ -92,7 +95,14 @@ public class Video extends Activity implements OnClickListener,
 
 		String pattern = "yyyy-MM-dd HH:mm:ss";//日期格式
 		mFormat = new SimpleDateFormat(pattern, Locale.CHINA);
-		YuvWaterMark.init(VIDEO_WIDTH - 400, VIDEO_HEIGHT - 100, pattern.length(), VIDEO_WIDTH, VIDEO_HEIGHT, 0);
+		YuvWaterMark.init(VIDEO_WIDTH, VIDEO_HEIGHT, 0);
+		timer = new Timer();
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				YuvWaterMark.addWaterMark(0, 100, 150, mFormat.format(new Date()), 20);
+			}
+		}, 0, 1000);
 	}
 
 	private void InitDataResource() {
@@ -103,11 +113,10 @@ public class Video extends Activity implements OnClickListener,
 		startOrStopIcon.setImageResource(isRecording ? R.drawable.ic_video_session_stop : R.drawable.ic_video_session_start);
 		findViewById(R.id.cut_icon).setOnClickListener(this);
 		long start = SystemClock.uptimeMillis();
-		Bitmap bitmapValue = YuvWaterMark.fromText("上海市闵行区秀文路898号\n" +
-				"西子国际中心5号楼17楼", 20);
-		Log.w("zts", " width " + bitmapValue.getWidth() + " height " + bitmapValue.getHeight());
-		byte[] one = YuvWaterMark.bitmapToGrayNV(bitmapValue, bitmapValue.getWidth(), bitmapValue.getHeight());
-		YuvWaterMark.setWaterMarkValueByte(1, 100, 100, bitmapValue.getWidth(), bitmapValue.getHeight(), one);
+
+		YuvWaterMark.addWaterMark(1, 100, 100, "上海市闵行区秀文路898号", 20);
+		YuvWaterMark.addWaterMark(2, 100, 130, "上海市闵行区秀文路898号", 20);
+
 		long stop = SystemClock.uptimeMillis();
 		Log.w("zts", "init water mark use time " + (stop - start));
 	}
@@ -140,6 +149,9 @@ public class Video extends Activity implements OnClickListener,
 			camera.release();
 			camera = null;
 			stopEncoder();
+		}
+		if (timer != null) {
+			timer.cancel();
 		}
 		YuvWaterMark.release();
 	}
@@ -302,12 +314,13 @@ public class Video extends Activity implements OnClickListener,
 
 	@Override
 	public void onPreviewFrame(byte[] data, Camera camera) {
+
 		if (data != null && encodeCenter != null && isEncoding) {
 //			Log.w(TAG, "onPreviewFrame " + (System.currentTimeMillis() - lastPreviewFrameMillis));
 //			lastPreviewFrameMillis = System.currentTimeMillis();
 			byte[] nv12 = new byte[data.length];
 			long start = SystemClock.uptimeMillis();
-			YuvWaterMark.addMark(data, nv12, mFormat.format(new Date()));
+			YuvWaterMark.addMark(data, nv12);
 			long time = SystemClock.uptimeMillis() - start;
 			addMarkUseMillis += time;
 			count++;

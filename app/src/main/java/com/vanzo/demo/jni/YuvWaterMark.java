@@ -26,15 +26,11 @@ public class YuvWaterMark {
 	/**
 	 * 初始化时间水印
 	 *
-	 * @param osdOffX     水印在视频左上的x偏移
-	 * @param osdOffY     水印在视频左上的y 偏移
-	 * @param patternLen  水印格式长度
 	 * @param frameWidth  相机宽
 	 * @param frameHeight 相机高
 	 * @param rotation    旋转角度,0,90,180,270
 	 */
-	public static native void init(int osdOffX, int osdOffY
-			, int patternLen, int frameWidth, int frameHeight, int rotation);
+	public static native void init(int frameWidth, int frameHeight, int rotation);
 
 
 	/**
@@ -43,18 +39,21 @@ public class YuvWaterMark {
 	 * @param index
 	 * @param offX
 	 * @param offY
-	 * @param value
+	 * @param mark_width
+	 * @param mark_height
+	 * @param mark_value
 	 */
-	public static native void setWaterMarkValue(int index, int offX, int offY, String value);
 
 	public static native void setWaterMarkValueByte(int index, int offX, int offY, int mark_width, int mark_height, byte[] mark_value);
+
+	public static native void resetWaterMarkValueByte(int index);
 
 	/**
 	 * 释放内存
 	 */
 	public static native void release();
 
-	public static native void addMark(byte[] yuvInData, byte[] outYvuData, String date);
+	public static native void addMark(byte[] yuvInData, byte[] outYvuData);
 
 
 	/**
@@ -192,7 +191,6 @@ public class YuvWaterMark {
 		int width = 0;
 		for (String value : splits) {
 			width = Math.max(width, (int) paint.measureText(value));
-			Log.w("zts", "width " + width);
 		}
 
 		Paint.FontMetricsInt fm = paint.getFontMetricsInt();
@@ -207,5 +205,11 @@ public class YuvWaterMark {
 		canvas.save();
 
 		return bitmap;
+	}
+
+	public static void addWaterMark(int index, int offX, int offY, String markText, int textSize) {
+		Bitmap markBitmap = fromText(markText, textSize);
+		byte[] markValue = bitmapToGrayNV(markBitmap, markBitmap.getWidth(), markBitmap.getHeight());
+		setWaterMarkValueByte(index, offX, offY, markBitmap.getWidth(), markBitmap.getHeight(), markValue);
 	}
 }

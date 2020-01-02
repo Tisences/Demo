@@ -23,7 +23,7 @@ extern "C" {
  * Signature: ()V
  */
 JNIEXPORT void JNICALL
-Java_com_vanzo_demo_jni_YuvWaterMark_addMark(JNIEnv *env, jclass type, jbyteArray yuv_in_data,jbyteArray yvu_out_data, jstring date_);
+Java_com_vanzo_demo_jni_YuvWaterMark_addMark(JNIEnv *env, jclass type, jbyteArray yuv_in_data,jbyteArray yvu_out_data);
 
 JNIEXPORT jcharArray JNICALL
 Java_com_vanzo_demo_jni_YuvWaterMark_argbIntToNV21Byte
@@ -45,8 +45,7 @@ Java_com_vanzo_demo_jni_YuvWaterMark_nv21ToNv12(JNIEnv *env, jclass type, jbyteA
 
 JNIEXPORT void JNICALL
 Java_com_vanzo_demo_jni_YuvWaterMark_init(JNIEnv *env, jclass type,
-                                               jint osdOffX,jint osdOffY,jint patternLen
-                                              ,jint frameWidth,jint frameHeight,jint rotation
+                                               jint frameWidth,jint frameHeight,jint rotation
 );
 
 JNIEXPORT void JNICALL
