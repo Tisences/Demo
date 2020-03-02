@@ -62,8 +62,8 @@ public class MediaCodecSaveControl {
 	}
 
 	private String createNewFilePath() {
-		return "sdcard/POC/Media/video/2019-12-25/VID_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".mp4";
-//		return "sdcard/DCIM/VID_" + System.currentTimeMillis() + ".mp4";
+//		return "sdcard/POC/Media/video/2020-01-02/VID_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".mp4";
+		return "sdcard/DCIM/VID_" + System.currentTimeMillis() + ".mp4";
 	}
 
 

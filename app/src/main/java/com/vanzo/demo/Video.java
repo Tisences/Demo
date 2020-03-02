@@ -6,10 +6,12 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -19,6 +21,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.TextureView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
@@ -30,7 +33,9 @@ import com.vanzo.demo.jni.YuvWaterMark;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -45,7 +50,9 @@ import java.util.concurrent.Executors;
  */
 public class Video extends Activity implements OnClickListener,
 		SurfaceHolder.Callback,
+		TextureView.SurfaceTextureListener,
 		MediaCodecCenter.MediaCodecCenterCallback,
+		Camera.AutoFocusCallback,
 		Camera.PreviewCallback {
 
 	public static final String TAG = Video.class.getSimpleName();
@@ -61,8 +68,8 @@ public class Video extends Activity implements OnClickListener,
 	private MediaCodecCenter encodeCenter;
 	private ExecutorService mExecutor;
 
-	private static final int VIDEO_WIDTH = 1920;
-	private static final int VIDEO_HEIGHT = 1080;
+	private static final int VIDEO_WIDTH = 1080;
+	private static final int VIDEO_HEIGHT = 1920;
 	private static final int VIDEO_FRAME = 20;
 	private SimpleDateFormat mFormat;
 
@@ -93,19 +100,14 @@ public class Video extends Activity implements OnClickListener,
 		encodeCenter = new MediaCodecCenter(this);
 		encodeCenter.setCenterCallback(this);
 
-		String pattern = "yyyy-MM-dd HH:mm:ss";//日期格式
-		mFormat = new SimpleDateFormat(pattern, Locale.CHINA);
-		YuvWaterMark.init(VIDEO_WIDTH, VIDEO_HEIGHT, 0);
-		timer = new Timer();
-		timer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				YuvWaterMark.addWaterMark(0, 100, 150, mFormat.format(new Date()), 20);
-			}
-		}, 0, 1000);
 	}
 
 	private void InitDataResource() {
+		Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+		Camera.getCameraInfo(Camera.CameraInfo.CAMERA_FACING_BACK, cameraInfo);
+		Log.w(TAG, "camera orientation " + cameraInfo.orientation);
+
+		YuvWaterMark.init(VIDEO_HEIGHT, VIDEO_WIDTH, 90);
 		startOrStopIcon = findViewById(R.id.start_or_stop_icon);
 		mSurfaceView = findViewById(R.id.surface);
 		mSurfaceView.getHolder().addCallback(this);
@@ -114,11 +116,20 @@ public class Video extends Activity implements OnClickListener,
 		findViewById(R.id.cut_icon).setOnClickListener(this);
 		long start = SystemClock.uptimeMillis();
 
-		YuvWaterMark.addWaterMark(1, 100, 100, "上海市闵行区秀文路898号", 20);
+		YuvWaterMark.addWaterMark(1, 100, 100, "上海凡卓通讯科技股份有限公司", 20);
 		YuvWaterMark.addWaterMark(2, 100, 130, "上海市闵行区秀文路898号", 20);
 
 		long stop = SystemClock.uptimeMillis();
 		Log.w("zts", "init water mark use time " + (stop - start));
+		String pattern = "yyyy-MM-dd HH:mm:ss";//日期格式
+		mFormat = new SimpleDateFormat(pattern, Locale.CHINA);
+		timer = new Timer();
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				YuvWaterMark.addWaterMark(0, 100, 160, mFormat.format(new Date()), 20);
+			}
+		}, 0, 1000);
 	}
 
 
@@ -158,18 +169,32 @@ public class Video extends Activity implements OnClickListener,
 
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
+		Log.w(TAG, "surfaceCreated");
 		try {
 			if (camera == null)
-				camera = Camera.open();
+				camera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
 			if (camera != null) {
 				camera.setPreviewDisplay(holder);
 				Parameters params = camera.getParameters();
 				params.setPreviewFormat(ImageFormat.NV21);// 图片格式
-				params.setPreviewSize(1920, 1080);
-				params.setPreviewFpsRange(VIDEO_FRAME, VIDEO_FRAME);
+
+				List<Camera.Size> previews = params.getSupportedPreviewSizes();
+				for (Camera.Size size : previews) {
+					Log.i(TAG, "support size " + size.width + "*" + size.height);
+				}
+				List<int[]> rangs = params.getSupportedPreviewFpsRange();
+				for (int[] rang : rangs) {
+					Log.i(TAG, "support rang " + Arrays.toString(rang));
+				}
+				params.setPreviewSize(VIDEO_HEIGHT, VIDEO_WIDTH);
+				params.setPreviewFpsRange(VIDEO_FRAME * 1000, VIDEO_FRAME * 1000);
+				params.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+				camera.setDisplayOrientation(90);
 				camera.setParameters(params);
 				camera.setPreviewCallback(this);
 				camera.startPreview();
+				camera.autoFocus(this);
+				camera.cancelAutoFocus();
 				startEncoder();
 			}
 		} catch (Exception e) {
@@ -184,6 +209,7 @@ public class Video extends Activity implements OnClickListener,
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
+		Log.w(TAG, "surfaceDestroyed");
 		if (camera != null) {
 			camera.setPreviewCallback(null);
 			camera.stopPreview();
@@ -340,4 +366,130 @@ public class Video extends Activity implements OnClickListener,
 			nv12[frameSize + j] = nv21[j + frameSize - 1];
 		}
 	}
+
+	@Override
+	public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+		Log.w(TAG, "surfaceCreated");
+		try {
+			if (camera == null)
+				camera = Camera.open();
+			if (camera != null) {
+				camera.setPreviewTexture(surface);
+				Parameters params = camera.getParameters();
+				params.setPreviewFormat(ImageFormat.NV21);// 图片格式
+				params.setPreviewSize(1920, 1080);
+				params.setPreviewFpsRange(VIDEO_FRAME, VIDEO_FRAME);
+				camera.setParameters(params);
+				camera.setPreviewCallback(this);
+				camera.startPreview();
+				startEncoder();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+
+	}
+
+	@Override
+	public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+		Log.w(TAG, "surfaceDestroyed");
+		if (camera != null) {
+			camera.setPreviewCallback(null);
+			camera.stopPreview();
+			camera.release();
+			camera = null;
+			stopEncoder();
+		}
+		return false;
+	}
+
+	@Override
+	public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+
+	}
+
+	@Override
+	public void onAutoFocus(boolean success, Camera camera) {
+		Log.w(TAG, "onAutoFocus " + success);
+//		Camera.Parameters params = camera.getParameters(); //有时对焦失败重新设置对焦模式
+//		params.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+//		camera.setParameters(params);
+	}
+
+//	public static byte[] rotateYUV420Degree90(byte[] data, int imageWidth, int imageHeight) {
+//		byte[] yuv = new byte[imageWidth * imageHeight * 3 / 2];
+//		int i = 0;
+//		for (int x = 0; x < imageWidth; x++) {
+//			for (int y = imageHeight - 1; y >= 0; y--) {
+//				yuv[i] = data[y * imageWidth + x];
+//				i++;
+//			}
+//		}
+//		i = imageWidth * imageHeight * 3 / 2 - 1;
+//		for (int x = imageWidth - 1; x > 0; x = x - 2) {
+//			for (int y = 0; y < imageHeight / 2; y++) {
+//				yuv[i] = data[(imageWidth * imageHeight) + (y * imageWidth) + x];
+//				i--;
+//				yuv[i] = data[(imageWidth * imageHeight) + (y * imageWidth)
+//						+ (x - 1)];
+//				i--;
+//			}
+//		}
+//		return yuv;
+//	}
+//
+//	private static byte[] rotateYUV420Degree180(byte[] data, int imageWidth, int imageHeight) {
+//		byte[] yuv = new byte[imageWidth * imageHeight * 3 / 2];
+//		int i = 0;
+//		int count = 0;
+//		for (i = imageWidth * imageHeight - 1; i >= 0; i--) {
+//			yuv[count] = data[i];
+//			count++;
+//		}
+//		i = imageWidth * imageHeight * 3 / 2 - 1;
+//		for (i = imageWidth * imageHeight * 3 / 2 - 1; i >= imageWidth
+//				* imageHeight; i -= 2) {
+//			yuv[count++] = data[i - 1];
+//			yuv[count++] = data[i];
+//		}
+//		return yuv;
+//	}
+//
+//	public static byte[] rotateYUV420Degree270(byte[] data, int imageWidth,
+//											   int imageHeight) {
+//		byte[] yuv = new byte[imageWidth * imageHeight * 3 / 2];
+//		int nWidth = 0, nHeight = 0;
+//		int wh = 0;
+//		int uvHeight = 0;
+//		if (imageWidth != nWidth || imageHeight != nHeight) {
+//			nWidth = imageWidth;
+//			nHeight = imageHeight;
+//			wh = imageWidth * imageHeight;
+//			uvHeight = imageHeight >> 1;// uvHeight = height / 2
+//		}
+//
+//		int k = 0;
+//		for (int i = 0; i < imageWidth; i++) {
+//			int nPos = 0;
+//			for (int j = 0; j < imageHeight; j++) {
+//				yuv[k] = data[nPos + i];
+//				k++;
+//				nPos += imageWidth;
+//			}
+//		}
+//		for (int i = 0; i < imageWidth; i += 2) {
+//			int nPos = wh;
+//			for (int j = 0; j < uvHeight; j++) {
+//				yuv[k] = data[nPos + i];
+//				yuv[k + 1] = data[nPos + i + 1];
+//				k += 2;
+//				nPos += imageWidth;
+//			}
+//		}
+//		return rotateYUV420Degree180(rotateYUV420Degree90(data, imageWidth, imageHeight), imageWidth, imageHeight);
+//	}
 }
