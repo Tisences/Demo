@@ -301,6 +301,20 @@ public class Video extends Activity implements OnClickListener,
 			saveControl.setMediaFormat(audioFormat, videoFormat);
 			isPrepare = true;
 		}
+//		initPPSAndSPS(videoFormat);
+	}
+
+	private void initPPSAndSPS(MediaFormat mediaFormat){
+		ByteBuffer spsbb = mediaFormat.getByteBuffer("csd-0");
+		ByteBuffer ppsbb = mediaFormat.getByteBuffer("csd-1");
+		byte[] pps = new byte[ppsbb.capacity() - 4];
+		ppsbb.position(4);
+		ppsbb.get(pps, 0, pps.length);
+		byte[] sps = new byte[spsbb.capacity() - 4];
+		spsbb.position(4);
+		spsbb.get(sps, 0, sps.length);
+		Log.w(TAG,"pps: "+ Arrays.toString(pps));
+		Log.w(TAG,"sps: "+ Arrays.toString(sps));
 	}
 
 	private long lastVideoFrameCodedMillis = 0;

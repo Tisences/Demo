@@ -62,7 +62,8 @@ public class MediaCodecCenter {
 	}
 
 	public int init(int width, int height, int frameRate, int videoRate) throws IOException {
-		int sampleRateInHz = 16000;
+		int sampleRateInHz = 22050;
+//		int sampleRateInHz = 16000;
 		int channelConfig = 1;
 		int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
 		int codecProfile = MediaCodecInfo.CodecProfileLevel.AACObjectLC;
