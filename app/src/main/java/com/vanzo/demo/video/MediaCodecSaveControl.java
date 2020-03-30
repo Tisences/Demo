@@ -1,4 +1,4 @@
-package com.vanzo.demo;
+package com.vanzo.demo.video;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -8,9 +8,7 @@ import android.os.Build;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 

@@ -1,4 +1,4 @@
-package com.vanzo.demo;
+package com.vanzo.demo.video;
 
 import android.content.Context;
 import android.media.AudioFormat;
@@ -9,7 +9,6 @@ import android.media.MediaFormat;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.SystemClock;
-import android.util.Log;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -80,6 +79,7 @@ public class MediaCodecCenter {
 		MediaFormat videoFormat = MediaFormat.createVideoFormat(VIDEO_MIME, width, height);
 		videoFormat.setInteger(MediaFormat.KEY_BIT_RATE, videoRate);
 		videoFormat.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
+		videoFormat.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR);
 		videoFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, FRAME_INTERVAL);
 		videoFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar);
 

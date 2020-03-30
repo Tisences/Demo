@@ -1,17 +1,17 @@
-package com.vanzo.demo;
+package com.vanzo.demo.video;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
+import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -19,6 +19,7 @@ import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
@@ -26,8 +27,10 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import com.vanzo.demo.R;
 import com.vanzo.demo.jni.YuvWaterMark;
 
 import java.io.IOException;
@@ -68,8 +71,8 @@ public class Video extends Activity implements OnClickListener,
 	private MediaCodecCenter encodeCenter;
 	private ExecutorService mExecutor;
 
-	private static final int VIDEO_WIDTH = 1080;
-	private static final int VIDEO_HEIGHT = 1920;
+	private static final int VIDEO_WIDTH = 1280;
+	private static final int VIDEO_HEIGHT = 720;
 	private static final int VIDEO_FRAME = 20;
 	private SimpleDateFormat mFormat;
 
@@ -107,7 +110,7 @@ public class Video extends Activity implements OnClickListener,
 		Camera.getCameraInfo(Camera.CameraInfo.CAMERA_FACING_BACK, cameraInfo);
 		Log.w(TAG, "camera orientation " + cameraInfo.orientation);
 
-		YuvWaterMark.init(VIDEO_HEIGHT, VIDEO_WIDTH, 90);
+		YuvWaterMark.init(VIDEO_WIDTH, VIDEO_HEIGHT, 0);
 		startOrStopIcon = findViewById(R.id.start_or_stop_icon);
 		mSurfaceView = findViewById(R.id.surface);
 		mSurfaceView.getHolder().addCallback(this);
@@ -115,6 +118,18 @@ public class Video extends Activity implements OnClickListener,
 		startOrStopIcon.setImageResource(isRecording ? R.drawable.ic_video_session_stop : R.drawable.ic_video_session_start);
 		findViewById(R.id.cut_icon).setOnClickListener(this);
 		long start = SystemClock.uptimeMillis();
+
+		Point outSize = new Point();
+		WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+		windowManager.getDefaultDisplay().getRealSize(outSize);
+		int width = outSize.x;
+		int height = width * VIDEO_HEIGHT / VIDEO_WIDTH;
+		Log.w(TAG, "init surface " + width + "*" + height);
+		FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) mSurfaceView.getLayoutParams();
+		layoutParams.width = width;
+		layoutParams.height = height;
+		layoutParams.gravity = Gravity.CENTER;
+		mSurfaceView.setLayoutParams(layoutParams);
 
 		YuvWaterMark.addWaterMark(1, 100, 100, "上海凡卓通讯科技股份有限公司", 20);
 		YuvWaterMark.addWaterMark(2, 100, 130, "上海市闵行区秀文路898号", 20);
@@ -186,10 +201,10 @@ public class Video extends Activity implements OnClickListener,
 				for (int[] rang : rangs) {
 					Log.i(TAG, "support rang " + Arrays.toString(rang));
 				}
-				params.setPreviewSize(VIDEO_HEIGHT, VIDEO_WIDTH);
+				params.setPreviewSize(VIDEO_WIDTH, VIDEO_HEIGHT);
 				params.setPreviewFpsRange(VIDEO_FRAME * 1000, VIDEO_FRAME * 1000);
 				params.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-				camera.setDisplayOrientation(90);
+				camera.setDisplayOrientation(0);
 				camera.setParameters(params);
 				camera.setPreviewCallback(this);
 				camera.startPreview();
@@ -240,7 +255,7 @@ public class Video extends Activity implements OnClickListener,
 			mExecutor = Executors.newSingleThreadExecutor();
 		}
 		try {
-			encodeCenter.init(VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_FRAME, VIDEO_FRAME * VIDEO_WIDTH * VIDEO_HEIGHT / 4);
+			encodeCenter.init(VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_FRAME, VIDEO_FRAME * VIDEO_WIDTH * VIDEO_HEIGHT / 8);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -304,7 +319,7 @@ public class Video extends Activity implements OnClickListener,
 //		initPPSAndSPS(videoFormat);
 	}
 
-	private void initPPSAndSPS(MediaFormat mediaFormat){
+	private void initPPSAndSPS(MediaFormat mediaFormat) {
 		ByteBuffer spsbb = mediaFormat.getByteBuffer("csd-0");
 		ByteBuffer ppsbb = mediaFormat.getByteBuffer("csd-1");
 		byte[] pps = new byte[ppsbb.capacity() - 4];
@@ -313,8 +328,8 @@ public class Video extends Activity implements OnClickListener,
 		byte[] sps = new byte[spsbb.capacity() - 4];
 		spsbb.position(4);
 		spsbb.get(sps, 0, sps.length);
-		Log.w(TAG,"pps: "+ Arrays.toString(pps));
-		Log.w(TAG,"sps: "+ Arrays.toString(sps));
+		Log.w(TAG, "pps: " + Arrays.toString(pps));
+		Log.w(TAG, "sps: " + Arrays.toString(sps));
 	}
 
 	private long lastVideoFrameCodedMillis = 0;
