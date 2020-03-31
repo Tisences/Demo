@@ -1,4 +1,4 @@
-package com.vanzo.demo.video;
+package com.cmccpoc.video;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -40,7 +40,7 @@ public class MediaCodecSaveControl {
 
 	private ByteBuffer buffer = ByteBuffer.allocate(999999);
 
-	MediaCodecSaveControl(Context context, int videoPreRecordDuration) {
+	public MediaCodecSaveControl(Context context, int videoPreRecordDuration) {
 		this.context = context;
 		this.videoPreRecordDuration = videoPreRecordDuration;
 		this.videoDataBlockingQueue = new ArrayBlockingQueue<>(this.videoPreRecordDuration * 2 + 4);

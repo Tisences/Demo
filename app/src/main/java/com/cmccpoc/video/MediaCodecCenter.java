@@ -1,4 +1,4 @@
-package com.vanzo.demo.video;
+package com.cmccpoc.video;
 
 import android.content.Context;
 import android.media.AudioFormat;
@@ -49,7 +49,7 @@ public class MediaCodecCenter {
 
 	private MediaCodecCenterCallback centerCallback = null;
 
-	MediaCodecCenter(Context context) {
+	public MediaCodecCenter(Context context) {
 		this.context = context;
 	}
 

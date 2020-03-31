@@ -1,4 +1,4 @@
-package com.vanzo.demo.video;
+package com.cmccpoc.video;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -31,7 +31,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import com.vanzo.demo.R;
-import com.vanzo.demo.jni.YuvWaterMark;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

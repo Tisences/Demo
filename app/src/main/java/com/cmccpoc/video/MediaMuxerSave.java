@@ -1,4 +1,4 @@
-package com.vanzo.demo.video;
+package com.cmccpoc.video;
 
 import android.content.Context;
 import android.content.Intent;

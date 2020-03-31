@@ -56,7 +56,7 @@ public class CameraOpenHelper {
 		this.frameCallback = frameCallback;
 	}
 
-	CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
+	private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
 		@Override
 		public void onOpened(@NonNull CameraDevice camera) {
 			cameraDevice = camera;
@@ -76,7 +76,7 @@ public class CameraOpenHelper {
 		}
 	};
 
-	ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener() {
+	private ImageReader.OnImageAvailableListener imageAvailableListener = new ImageReader.OnImageAvailableListener() {
 		@Override
 		public void onImageAvailable(ImageReader reader) {
 			Image image = reader.acquireNextImage();
@@ -137,21 +137,25 @@ public class CameraOpenHelper {
 
 	private void setCameraId() throws Exception {
 		cameraManager = context.getSystemService(CameraManager.class);
-		String[] cameraIds = cameraManager.getCameraIdList();
-		for (String camera_id : cameraIds) {
-			CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(camera_id);
-			Integer face = characteristics.get(CameraCharacteristics.LENS_FACING);
-			if (face != null && face == CameraCharacteristics.LENS_FACING_BACK) {
-				cameraId = camera_id;
-				StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-				Size largest = Collections.max(Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
-						new CompareSizesByArea());
-				Log.w(TAG, "camera id " + cameraId + " largest size " + largest);
-				break;
+		if (cameraManager != null) {
+			String[] cameraIds = cameraManager.getCameraIdList();
+			for (String camera_id : cameraIds) {
+				CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(camera_id);
+				Integer face = characteristics.get(CameraCharacteristics.LENS_FACING);
+				if (face != null && face == CameraCharacteristics.LENS_FACING_BACK) {
+					cameraId = camera_id;
+					StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+					if (map != null) {
+						Size largest = Collections.max(Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
+								new CompareSizesByArea());
+						Log.w(TAG, "camera id " + cameraId + " largest size " + largest);
+					}
+					break;
+				}
 			}
-		}
-		if (cameraId == null) {
-			throw new Exception("no back camera");
+			if (cameraId == null) {
+				throw new Exception("no back camera");
+			}
 		}
 	}
 
@@ -181,19 +185,25 @@ public class CameraOpenHelper {
 
 	public void closeCamera() {
 
-		if (cameraDevice != null) {
-			cameraDevice.close();
-			cameraDevice = null;
-		}
 		if (captureSession != null) {
-			captureSession.close();
-			captureSession = null;
+			try {
+				captureSession.stopRepeating();
+			} catch (CameraAccessException e) {
+				e.printStackTrace();
+			} finally {
+				captureSession.close();
+				captureSession = null;
+				if (cameraDevice != null) {
+					cameraDevice.close();
+					cameraDevice = null;
+				}
+				if (imageReader != null) {
+					imageReader.close();
+					imageReader = null;
+				}
+				stopBackgroundThread();
+			}
 		}
-		if (imageReader != null) {
-			imageReader.close();
-			imageReader = null;
-		}
-		stopBackgroundThread();
 	}
 
 	private CaptureRequest.Builder previewBuilder;

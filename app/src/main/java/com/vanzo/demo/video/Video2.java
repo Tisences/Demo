@@ -25,9 +25,11 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
+import com.cmccpoc.video.MediaCodecCenter;
+import com.cmccpoc.video.MediaCodecSaveControl;
+import com.cmccpoc.video.YuvWaterMark;
 import com.vanzo.demo.CameraOpenHelper;
 import com.vanzo.demo.R;
-import com.vanzo.demo.jni.YuvWaterMark;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
