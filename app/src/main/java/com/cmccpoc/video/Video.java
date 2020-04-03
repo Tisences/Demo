@@ -70,14 +70,15 @@ public class Video extends Activity implements OnClickListener,
 	private MediaCodecCenter encodeCenter;
 	private ExecutorService mExecutor;
 
-	private static final int VIDEO_WIDTH = 1280;
-	private static final int VIDEO_HEIGHT = 720;
-	private static final int VIDEO_FRAME = 20;
+	private static final int VIDEO_WIDTH = 1920;
+	private static final int VIDEO_HEIGHT = 1080;
+	private static final int VIDEO_FRAME = 15;
 	private SimpleDateFormat mFormat;
 
 	private static final int VIDEO_CUTOFF_DURATION = 60 * 1000;
 	private static final int VIDEO_PRE_DURATION = 15;
 	private Timer timer;
+	private int orientation = 0;
 
 	@SuppressLint("HandlerLeak")
 	private Handler curHandler = new Handler() {
@@ -108,8 +109,9 @@ public class Video extends Activity implements OnClickListener,
 		Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
 		Camera.getCameraInfo(Camera.CameraInfo.CAMERA_FACING_BACK, cameraInfo);
 		Log.w(TAG, "camera orientation " + cameraInfo.orientation);
+		orientation = cameraInfo.orientation;
 
-		YuvWaterMark.init(VIDEO_WIDTH, VIDEO_HEIGHT, 0);
+		YuvWaterMark.init(VIDEO_WIDTH, VIDEO_HEIGHT, orientation);
 		startOrStopIcon = findViewById(R.id.start_or_stop_icon);
 		mSurfaceView = findViewById(R.id.surface);
 		mSurfaceView.getHolder().addCallback(this);
@@ -122,7 +124,14 @@ public class Video extends Activity implements OnClickListener,
 		WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 		windowManager.getDefaultDisplay().getRealSize(outSize);
 		int width = outSize.x;
-		int height = width * VIDEO_HEIGHT / VIDEO_WIDTH;
+		int height;
+		if (orientation == 90 || orientation == 270) {
+			height = width * VIDEO_WIDTH / VIDEO_HEIGHT;
+		} else if (orientation == 0 || orientation == 180) {
+			height = width * VIDEO_HEIGHT / VIDEO_WIDTH;
+		} else {
+			height = outSize.y;
+		}
 		Log.w(TAG, "init surface " + width + "*" + height);
 		FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) mSurfaceView.getLayoutParams();
 		layoutParams.width = width;
@@ -203,7 +212,7 @@ public class Video extends Activity implements OnClickListener,
 				params.setPreviewSize(VIDEO_WIDTH, VIDEO_HEIGHT);
 				params.setPreviewFpsRange(VIDEO_FRAME * 1000, VIDEO_FRAME * 1000);
 				params.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-				camera.setDisplayOrientation(0);
+				camera.setDisplayOrientation(orientation);
 				camera.setParameters(params);
 				camera.setPreviewCallback(this);
 				camera.startPreview();
@@ -254,7 +263,11 @@ public class Video extends Activity implements OnClickListener,
 			mExecutor = Executors.newSingleThreadExecutor();
 		}
 		try {
-			encodeCenter.init(VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_FRAME, VIDEO_FRAME * VIDEO_WIDTH * VIDEO_HEIGHT / 8);
+			if (orientation == 90 || orientation == 270) {
+				encodeCenter.init(VIDEO_HEIGHT, VIDEO_WIDTH, VIDEO_FRAME, VIDEO_FRAME * VIDEO_WIDTH * VIDEO_HEIGHT / 8);
+			} else {
+				encodeCenter.init(VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_FRAME, VIDEO_FRAME * VIDEO_WIDTH * VIDEO_HEIGHT / 8);
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
