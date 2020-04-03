@@ -139,7 +139,6 @@ public class Video extends Activity implements OnClickListener,
 		layoutParams.gravity = Gravity.CENTER;
 		mSurfaceView.setLayoutParams(layoutParams);
 
-		YuvWaterMark.addWaterMark(1, 100, 100, "上海凡卓通讯科技股份有限公司", 20);
 		YuvWaterMark.addWaterMark(2, 100, 130, "上海市闵行区秀文路898号", 20);
 
 		long stop = SystemClock.uptimeMillis();

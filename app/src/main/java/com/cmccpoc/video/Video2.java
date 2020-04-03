@@ -1,4 +1,4 @@
-package com.vanzo.demo.video;
+package com.cmccpoc.video;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -25,10 +25,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
-import com.cmccpoc.video.MediaCodecCenter;
-import com.cmccpoc.video.MediaCodecSaveControl;
-import com.cmccpoc.video.YuvWaterMark;
-import com.vanzo.demo.CameraOpenHelper;
 import com.vanzo.demo.R;
 
 import java.io.IOException;
@@ -119,7 +115,6 @@ public class Video2 extends Activity implements OnClickListener,
 		findViewById(R.id.cut_icon).setOnClickListener(this);
 		long start = SystemClock.uptimeMillis();
 
-		YuvWaterMark.addWaterMark(1, 100, 100, "上海凡卓通讯科技股份有限公司", 20);
 		YuvWaterMark.addWaterMark(2, 100, 130, "上海市闵行区秀文路898号", 20);
 
 		long stop = SystemClock.uptimeMillis();

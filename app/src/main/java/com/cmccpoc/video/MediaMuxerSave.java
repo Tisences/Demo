@@ -11,6 +11,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+/**
+ * 使用MediaMuxer保存
+ */
+
 public class MediaMuxerSave {
 	private Context context;
 

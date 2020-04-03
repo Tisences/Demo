@@ -51,7 +51,7 @@ workspace.xml
 signing.properties
 local.properties
 gradle.properties
-gradle/
+#gradle/
 gradlew
 gradlew.bat
 app/proguard-rules.pro
