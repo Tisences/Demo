@@ -141,11 +141,11 @@ public class CameraOpenHelper {
 		cameraManager = context.getSystemService(CameraManager.class);
 		if (cameraManager != null) {
 			String[] cameraIds = cameraManager.getCameraIdList();
-			for (String camera_id : cameraIds) {
-				CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(camera_id);
+			for (String tempCameraId : cameraIds) {
+				CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(tempCameraId);
 				Integer face = characteristics.get(CameraCharacteristics.LENS_FACING);
 				if (face != null && face == CameraCharacteristics.LENS_FACING_BACK) {
-					cameraId = camera_id;
+					cameraId = tempCameraId;
 					StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 					if (map != null) {
 						Size largest = Collections.max(Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),

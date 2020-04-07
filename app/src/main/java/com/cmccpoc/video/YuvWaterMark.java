@@ -7,6 +7,7 @@ import android.graphics.ImageFormat;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
+import android.util.Log;
 
 
 import java.io.ByteArrayOutputStream;
@@ -17,6 +18,7 @@ import java.io.ByteArrayOutputStream;
  */
 
 public class YuvWaterMark {
+	public static final String TAG = YuvWaterMark.class.getSimpleName();
 
 	static {
 		System.loadLibrary("YuvWaterMark");
@@ -35,12 +37,12 @@ public class YuvWaterMark {
 	/**
 	 * 设置水印信息
 	 *
-	 * @param index 水印编号
-	 * @param offX	位置X轴
-	 * @param offY	位置Y轴
-	 * @param mark_width	水印宽度
-	 * @param mark_height	水印高度
-	 * @param mark_value	水印资源
+	 * @param index       水印编号
+	 * @param offX        位置X轴
+	 * @param offY        位置Y轴
+	 * @param mark_width  水印宽度
+	 * @param mark_height 水印高度
+	 * @param mark_value  水印资源
 	 */
 
 	public static native void setWaterMarkValueByte(int index, int offX, int offY, int mark_width, int mark_height, byte[] mark_value);
@@ -147,7 +149,9 @@ public class YuvWaterMark {
 	 * @param height
 	 */
 	public static void NV21ToNV12(byte[] nv21, int width, int height) {
-		if (nv21 == null) return;
+		if (nv21 == null) {
+			return;
+		}
 		int framesize = width * height;
 		int j = 0;
 		int end = framesize + framesize / 2;
@@ -207,8 +211,12 @@ public class YuvWaterMark {
 	}
 
 	public static void addWaterMark(int index, int offX, int offY, String markText, int textSize) {
-		Bitmap markBitmap = fromText(markText, textSize);
-		byte[] markValue = bitmapToGrayNV(markBitmap, markBitmap.getWidth(), markBitmap.getHeight());
-		setWaterMarkValueByte(index, offX, offY, markBitmap.getWidth(), markBitmap.getHeight(), markValue);
+		if (index < 8) {
+			Bitmap markBitmap = fromText(markText, textSize);
+			byte[] markValue = bitmapToGrayNV(markBitmap, markBitmap.getWidth(), markBitmap.getHeight());
+			setWaterMarkValueByte(index, offX, offY, markBitmap.getWidth(), markBitmap.getHeight(), markValue);
+		} else {
+			Log.e(TAG, "need index < 8 ,bug now index = " + index);
+		}
 	}
 }

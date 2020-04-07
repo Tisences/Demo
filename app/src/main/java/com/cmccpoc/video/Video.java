@@ -5,7 +5,10 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 import android.graphics.ImageFormat;
+import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -97,7 +100,12 @@ public class Video extends Activity implements OnClickListener,
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.photo_camera);
-		InitDataResource();
+		Paint paint = new Paint();
+		ColorMatrix matrix = new ColorMatrix();
+		matrix.setSaturation(0);
+		paint.setColorFilter(new ColorMatrixColorFilter(matrix));
+		getWindow().getDecorView().setLayerType(View.LAYER_TYPE_HARDWARE, paint);
+		initDataResource();
 		requestPower();
 		saveControl = new MediaCodecSaveControl(this, VIDEO_PRE_DURATION);
 		encodeCenter = new MediaCodecCenter(this);
@@ -105,7 +113,7 @@ public class Video extends Activity implements OnClickListener,
 
 	}
 
-	private void InitDataResource() {
+	private void initDataResource() {
 		Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
 		Camera.getCameraInfo(Camera.CameraInfo.CAMERA_FACING_BACK, cameraInfo);
 		Log.w(TAG, "camera orientation " + cameraInfo.orientation);
@@ -193,8 +201,9 @@ public class Video extends Activity implements OnClickListener,
 	public void surfaceCreated(SurfaceHolder holder) {
 		Log.w(TAG, "surfaceCreated");
 		try {
-			if (camera == null)
+			if (camera == null) {
 				camera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
+			}
 			if (camera != null) {
 				camera.setPreviewDisplay(holder);
 				Parameters params = camera.getParameters();
@@ -211,6 +220,7 @@ public class Video extends Activity implements OnClickListener,
 				params.setPreviewSize(VIDEO_WIDTH, VIDEO_HEIGHT);
 				params.setPreviewFpsRange(VIDEO_FRAME * 1000, VIDEO_FRAME * 1000);
 				params.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+				params.setColorEffect(Parameters.EFFECT_MONO);
 				camera.setDisplayOrientation(orientation);
 				camera.setParameters(params);
 				camera.setPreviewCallback(this);
@@ -396,7 +406,9 @@ public class Video extends Activity implements OnClickListener,
 	}
 
 	private static void NV21ToNV12(byte[] nv21, byte[] nv12, int width, int height) {
-		if (nv21 == null || nv12 == null) return;
+		if (nv21 == null || nv12 == null) {
+			return;
+		}
 		int frameSize = width * height;
 		System.arraycopy(nv21, 0, nv12, 0, frameSize);
 		for (int j = 0; j < frameSize / 2; j += 2) {
@@ -411,14 +423,16 @@ public class Video extends Activity implements OnClickListener,
 	public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
 		Log.w(TAG, "surfaceCreated");
 		try {
-			if (camera == null)
+			if (camera == null) {
 				camera = Camera.open();
+			}
 			if (camera != null) {
 				camera.setPreviewTexture(surface);
 				Parameters params = camera.getParameters();
 				params.setPreviewFormat(ImageFormat.NV21);// 图片格式
 				params.setPreviewSize(1920, 1080);
 				params.setPreviewFpsRange(VIDEO_FRAME, VIDEO_FRAME);
+				params.setColorEffect(Parameters.EFFECT_MONO);
 				camera.setParameters(params);
 				camera.setPreviewCallback(this);
 				camera.startPreview();

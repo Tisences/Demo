@@ -19,13 +19,15 @@ void NV21ToNV12(jbyte *nv21, int width, int height) {
 
 }
 
-int g_mark_off_x[8] = {0};
-int g_mark_off_y[8] = {0};
+const int mark_size = 8;
 
-int g_mark_width[8] = {0};
-int g_mark_height[8] = {0};
+int g_mark_off_x[mark_size] = {0};
+int g_mark_off_y[mark_size] = {0};
 
-jbyte *g_mark_value[8];
+int g_mark_width[mark_size] = {0};
+int g_mark_height[mark_size] = {0};
+
+jbyte *g_mark_value[mark_size];
 
 int rotation;
 int frame_width, frame_height;
@@ -163,7 +165,7 @@ const uint16_t ascii[][32] = {
 
 JNIEXPORT void JNICALL
 Java_com_cmccpoc_video_YuvWaterMark_init(JNIEnv *env, jclass type, jint frameWidth,
-                                          jint frameHeight, jint rotation_angle) {
+                                         jint frameHeight, jint rotation_angle) {
 
     frame_width = frameWidth;
     frame_height = frameHeight;
@@ -294,7 +296,7 @@ Java_com_cmccpoc_video_YuvWaterMark_addMark(
 
 
     jbyte *dest = destData;
-    for (int k = 0; k < 8; k++) {
+    for (int k = 0; k < mark_size; k++) {
         int mark_off_x = g_mark_off_x[k];
         int mark_off_y = g_mark_off_y[k];
         int mark_width = g_mark_width[k];
@@ -323,7 +325,7 @@ Java_com_cmccpoc_video_YuvWaterMark_addMark(
 
 JNIEXPORT jbyteArray JNICALL
 Java_com_cmccpoc_video_YuvWaterMark_argbIntToNV21Byte(JNIEnv *env, jclass jclazz, jintArray ints,
-                                                       jint width, jint height) {
+                                                      jint width, jint height) {
     int frameSize = width * height;
     jint *argb = (*env)->GetIntArrayElements(env, ints, NULL);
     int resLength = frameSize * 3 / 2;
@@ -361,7 +363,7 @@ Java_com_cmccpoc_video_YuvWaterMark_argbIntToNV21Byte(JNIEnv *env, jclass jclazz
 
 JNIEXPORT jbyteArray JNICALL
 Java_com_cmccpoc_video_YuvWaterMark_argbIntToNV12Byte(JNIEnv *env, jclass jclazz, jintArray ints,
-                                                       jint width, jint height) {
+                                                      jint width, jint height) {
     int frameSize = width * height;
     jint *argb = (*env)->GetIntArrayElements(env, ints, NULL);
     int resLength = frameSize * 3 / 2;
@@ -399,8 +401,8 @@ Java_com_cmccpoc_video_YuvWaterMark_argbIntToNV12Byte(JNIEnv *env, jclass jclazz
 
 JNIEXPORT jbyteArray JNICALL
 Java_com_cmccpoc_video_YuvWaterMark_argbIntToGrayNVByte(JNIEnv *env, jclass jclazz,
-                                                         jintArray ints,
-                                                         jint width, jint height) {
+                                                        jintArray ints,
+                                                        jint width, jint height) {
     int frameSize = width * height;
     jint *argb = (*env)->GetIntArrayElements(env, ints, NULL);
     int resLength = frameSize;
@@ -431,7 +433,7 @@ Java_com_cmccpoc_video_YuvWaterMark_argbIntToGrayNVByte(JNIEnv *env, jclass jcla
 
 JNIEXPORT void JNICALL
 Java_com_cmccpoc_video_YuvWaterMark_nv21ToNv12(JNIEnv *env, jclass type, jbyteArray nv21Src_,
-                                                jbyteArray nv12Dest_, jint width, jint height) {
+                                               jbyteArray nv12Dest_, jint width, jint height) {
     jbyte *nv21Src = (*env)->GetByteArrayElements(env, nv21Src_, NULL);
     jbyte *nv12Dest = (*env)->GetByteArrayElements(env, nv12Dest_, NULL);
 
@@ -455,22 +457,26 @@ Java_com_cmccpoc_video_YuvWaterMark_release(JNIEnv *env, jclass type) {
 
 JNIEXPORT void JNICALL
 Java_com_cmccpoc_video_YuvWaterMark_setWaterMarkValueByte(JNIEnv *env, jclass clazz, jint index,
-                                                           jint off_x, jint off_y, jint mark_width,
-                                                           jint mark_height,
-                                                           jbyteArray mark_value) {
-    g_mark_off_x[index] = off_x;
-    g_mark_off_y[index] = off_y;
-    g_mark_value[index] = (*env)->GetByteArrayElements(env, mark_value, NULL);
-    g_mark_width[index] = mark_width;
-    g_mark_height[index] = mark_height;
+                                                          jint off_x, jint off_y, jint mark_width,
+                                                          jint mark_height,
+                                                          jbyteArray mark_value) {
+    if (index < mark_size) {
+        g_mark_off_x[index] = off_x;
+        g_mark_off_y[index] = off_y;
+        g_mark_value[index] = (*env)->GetByteArrayElements(env, mark_value, NULL);
+        g_mark_width[index] = mark_width;
+        g_mark_height[index] = mark_height;
+    }
 }
 
 JNIEXPORT void JNICALL
 Java_com_cmccpoc_video_YuvWaterMark_resetWaterMarkValueByte(JNIEnv *env, jclass clazz,
-                                                             jint index) {
-    g_mark_off_x[index] = 0;
-    g_mark_off_y[index] = 0;
-    g_mark_value[index] = NULL;
-    g_mark_width[index] = 0;
-    g_mark_height[index] = 0;
+                                                            jint index) {
+    if (index < mark_size) {
+        g_mark_off_x[index] = 0;
+        g_mark_off_y[index] = 0;
+        g_mark_value[index] = NULL;
+        g_mark_width[index] = 0;
+        g_mark_height[index] = 0;
+    }
 }
