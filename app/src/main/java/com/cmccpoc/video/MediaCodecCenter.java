@@ -1,4 +1,4 @@
-package com.vanzo.demo;
+package com.cmccpoc.video;
 
 import android.content.Context;
 import android.media.AudioFormat;
@@ -9,10 +9,14 @@ import android.media.MediaFormat;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.SystemClock;
-import android.util.Log;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+
+/**
+ * 编码器 编码视频流和音频流
+ * MediaCodec
+ */
 
 public class MediaCodecCenter {
 
@@ -22,15 +26,15 @@ public class MediaCodecCenter {
 
 	private Context context;
 
-	private static final String AUDIO_MIME = MediaFormat.MIMETYPE_AUDIO_AAC;   //音频编码的Mime
-	private static final String VIDEO_MIME = MediaFormat.MIMETYPE_VIDEO_AVC;   //视频编码格式
-	private MediaCodec audioMediaCodec;   //编码器，用于音频编码
-	private MediaCodec videoMediaCodec;
+	private static final String AUDIO_MIME = MediaFormat.MIMETYPE_AUDIO_AAC;   //音频编码格式AAC
+	private static final String VIDEO_MIME = MediaFormat.MIMETYPE_VIDEO_AVC;   //视频编码格式AVC
+	private MediaCodec audioMediaCodec;		//编码器，用于音频编码
+	private MediaCodec videoMediaCodec;		//编码器，用于视频编码
 
 	private Thread mAudioThread;
 	private Thread mVideoThread;
 
-	private AudioRecord audioRecord;   //录音器
+	private AudioRecord audioRecord;   		//采集音频
 	private static final int FRAME_INTERVAL = 1;        //视频编码关键帧，1秒一关键帧
 	private static final int AUDIO_RATE = 128000;   //音频编码的密钥比特率
 
@@ -50,7 +54,7 @@ public class MediaCodecCenter {
 
 	private MediaCodecCenterCallback centerCallback = null;
 
-	MediaCodecCenter(Context context) {
+	public MediaCodecCenter(Context context) {
 		this.context = context;
 	}
 
@@ -63,7 +67,6 @@ public class MediaCodecCenter {
 
 	public int init(int width, int height, int frameRate, int videoRate) throws IOException {
 		int sampleRateInHz = 22050;
-//		int sampleRateInHz = 16000;
 		int channelConfig = 1;
 		int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
 		int codecProfile = MediaCodecInfo.CodecProfileLevel.AACObjectLC;
@@ -80,6 +83,7 @@ public class MediaCodecCenter {
 		MediaFormat videoFormat = MediaFormat.createVideoFormat(VIDEO_MIME, width, height);
 		videoFormat.setInteger(MediaFormat.KEY_BIT_RATE, videoRate);
 		videoFormat.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
+		videoFormat.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_VBR);
 		videoFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, FRAME_INTERVAL);
 		videoFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar);
 
@@ -202,7 +206,6 @@ public class MediaCodecCenter {
 			outputIndex = audioMediaCodec.dequeueOutputBuffer(info, 0);
 			if (outputIndex >= 0) {
 				ByteBuffer buffer = getOutputBuffer(audioMediaCodec, outputIndex);
-//				buffer.position(info.offset);
 				if (info.size > 0 && info.presentationTimeUs > 0 && centerCallback != null) {
 					if (info.presentationTimeUs > lastAudioPresentationTimeUs) {
 						lastAudioPresentationTimeUs = info.presentationTimeUs;
@@ -269,10 +272,6 @@ public class MediaCodecCenter {
 		return false;
 	}
 
-
-	void release() {
-
-	}
 
 	public interface MediaCodecCenterCallback {
 		void onPrepare(MediaFormat audioFormat, MediaFormat videoFormat);

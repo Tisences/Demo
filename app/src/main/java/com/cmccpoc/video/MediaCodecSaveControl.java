@@ -1,4 +1,4 @@
-package com.vanzo.demo;
+package com.cmccpoc.video;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -8,14 +8,12 @@ import android.os.Build;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 /**
- * Description:
+ * 音视频流保存，实现预录制，分段录制
  */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class MediaCodecSaveControl {
@@ -42,7 +40,7 @@ public class MediaCodecSaveControl {
 
 	private ByteBuffer buffer = ByteBuffer.allocate(999999);
 
-	MediaCodecSaveControl(Context context, int videoPreRecordDuration) {
+	public MediaCodecSaveControl(Context context, int videoPreRecordDuration) {
 		this.context = context;
 		this.videoPreRecordDuration = videoPreRecordDuration;
 		this.videoDataBlockingQueue = new ArrayBlockingQueue<>(this.videoPreRecordDuration * 2 + 4);
@@ -62,13 +60,11 @@ public class MediaCodecSaveControl {
 	}
 
 	private String createNewFilePath() {
-//		return "sdcard/POC/Media/video/2020-01-02/VID_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".mp4";
 		return "sdcard/DCIM/VID_" + System.currentTimeMillis() + ".mp4";
 	}
 
 
 	private synchronized void addMediaData(int index, byte[] data, MediaCodec.BufferInfo info) {
-//		Log.w(TAG, "addMediaData " + index + " Data " + data.length + " " + " " + info.size + " " + info.presentationTimeUs + " " + info.flags);
 		if (isSaving && !isCheckStage) {
 			if (currentVideoDataPerSecond != null) {
 				for (VideoData videoData : currentVideoDataPerSecond.videoDataList) {
@@ -102,9 +98,6 @@ public class MediaCodecSaveControl {
 					videoDataBlockingQueue.poll();
 				}
 				videoDataBlockingQueue.offer(currentVideoDataPerSecond);
-//				for (VideoData videoData : currentVideoDataPerSecond.videoDataList) {
-//					Log.d(TAG, "videoData " + videoData.info.size + " " + videoData.info.presentationTimeUs);
-//				}
 			}
 			currentVideoDataPerSecond = new VideoDataPerSecond();
 			currentVideoDataPerSecond.videoDataList.add(temp);

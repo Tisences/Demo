@@ -1,4 +1,4 @@
-package com.vanzo.demo;
+package com.cmccpoc.video;
 
 import android.content.Context;
 import android.content.Intent;
@@ -10,6 +10,10 @@ import android.net.Uri;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+
+/**
+ * 使用MediaMuxer保存
+ */
 
 public class MediaMuxerSave {
 	private Context context;
