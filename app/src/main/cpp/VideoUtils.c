@@ -223,12 +223,23 @@ Java_com_cmccpoc_video_YuvWaterMark_addMark(
 
         for (int i = 0; i < frame_width; i += 2) {
             for (int j = uvHeight - 1; j >= 0; j--) {
+                //顺手交换一下UV位置 NV21ToNV12
                 destData[k] = nv21Src[frame_size + frame_width * j + i + 1];
                 destData[k + 1] = nv21Src[frame_size + frame_width * j + i];
                 k += 2;
             }
         }
         frameW = frame_height;
+    } else if (rotation == 180) {
+        int dataSize = frame_width * frame_height * 3 / 2;
+        for (int i = 0; i < frame_size; i++) {
+            destData[frame_size - i - 1] = nv21Src[i];
+        }
+        //旋转UV
+        for (int i = frame_size; i < dataSize; i++) {
+            destData[dataSize - i - 1 + frame_size] = nv21Src[i];
+        }
+        frameW = frame_width;
     } else if (rotation == 270) {//顺时针旋转270,=逆方向90
         int k = 0;
         for (int i = frame_width - 1; i >= 0; i--) {//旋转Y
@@ -311,7 +322,12 @@ Java_com_cmccpoc_video_YuvWaterMark_addMark(
                 jbyte *destIndex = column + mark_off_x;
                 for (int j = 0; j < mark_width; j++) {
                     if (*(src + j) != 16) {//黑色背景色
-                        *(destIndex + j) = -1;//水印文字颜色，-1为白色，0为黑色
+                        //在强曝光情况下反转水印颜色
+                        if (*(destIndex + j) <= -1 && *(destIndex + j) >= -30) {
+                            *(destIndex + j) = 0;//水印文字颜色，-1为白色，0为黑色
+                        } else {
+                            *(destIndex + j) = -1;//水印文字颜色，-1为白色，0为黑色
+                        }
                     }
                 }
             }
