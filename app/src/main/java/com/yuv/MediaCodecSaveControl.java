@@ -1,4 +1,4 @@
-package com.cmccpoc.video;
+package com.yuv;
 
 import android.annotation.TargetApi;
 import android.content.Context;

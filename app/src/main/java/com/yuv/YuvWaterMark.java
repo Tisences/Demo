@@ -1,4 +1,4 @@
-package com.cmccpoc.video;
+package com.yuv;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -21,7 +21,7 @@ public class YuvWaterMark {
 	public static final String TAG = YuvWaterMark.class.getSimpleName();
 
 	static {
-		System.loadLibrary("YuvWaterMark");
+		System.loadLibrary("Yuvwatermark");
 	}
 
 	/**

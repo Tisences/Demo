@@ -3,7 +3,7 @@
 
 # Sets the minimum version of CMake required to build the native library.
 
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.18.1)
 
 
 find_library( # Sets the name of the path variable.
@@ -12,16 +12,16 @@ find_library( # Sets the name of the path variable.
 
 # yuvOsd
 add_library( # Sets the name of the library.
-        YuvWaterMark
+        Yuvwatermark
 
         # Sets the library as a shared library.
         SHARED
 
         # Provides a relative path to your source file(s).
-        src/main/cpp/VideoUtils.c)
+        src/main/cpp/watermark.c)
 
 
-target_link_libraries(YuvWaterMark
+target_link_libraries(Yuvwatermark
         ${log-lib}
 
         )

@@ -1,4 +1,4 @@
-package com.cmccpoc.video;
+package com.yuv;
 
 import android.Manifest;
 import android.content.Context;

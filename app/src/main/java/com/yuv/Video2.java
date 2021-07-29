@@ -1,18 +1,11 @@
-package com.cmccpoc.video;
+package com.yuv;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.ColorMatrix;
-import android.graphics.ColorMatrixColorFilter;
-import android.graphics.ImageFormat;
-import android.graphics.Paint;
-import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import android.hardware.Camera.Parameters;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Bundle;
@@ -22,7 +15,7 @@ import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
-import android.view.Gravity;
+import android.util.Size;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
@@ -30,7 +23,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import com.vanzo.demo.R;
@@ -40,7 +32,6 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -53,18 +44,16 @@ import java.util.concurrent.Executors;
  *
  * @author Yao
  */
-public class Video extends Activity implements OnClickListener,
-		SurfaceHolder.Callback,
+public class Video2 extends Activity implements OnClickListener,
 		TextureView.SurfaceTextureListener,
-		MediaCodecCenter.MediaCodecCenterCallback,
-		Camera.AutoFocusCallback,
-		Camera.PreviewCallback {
+		SurfaceHolder.Callback,
+		CameraOpenHelper.PreviewFrameCallback,
+		MediaCodecCenter.MediaCodecCenterCallback {
 
-	public static final String TAG = Video.class.getSimpleName();
+	public static final String TAG = Video2.class.getSimpleName();
 	private ImageView startOrStopIcon;
 
-	private Camera camera;
-	private SurfaceView mSurfaceView;
+	private SurfaceView textureView;
 
 	private boolean isEncoding = false;
 	private boolean isRecording = false;
@@ -75,20 +64,22 @@ public class Video extends Activity implements OnClickListener,
 
 	private static final int VIDEO_WIDTH = 1920;
 	private static final int VIDEO_HEIGHT = 1080;
-	private static final int VIDEO_FRAME = 15;
+	private static final int VIDEO_FRAME = 20;
 	private SimpleDateFormat mFormat;
 
 	private static final int VIDEO_CUTOFF_DURATION = 60 * 1000;
 	private static final int VIDEO_PRE_DURATION = 15;
+	private static final int VIDEO_CUTOFF_MESSAGE = 11;
 	private Timer timer;
-	private int orientation = 0;
+
+	private CameraOpenHelper cameraOpenHelper;
 
 	@SuppressLint("HandlerLeak")
 	private Handler curHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
 			super.handleMessage(msg);
-			if (msg.what == 11) {
+			if (msg.what == VIDEO_CUTOFF_MESSAGE) {
 				cut();
 			}
 		}
@@ -99,53 +90,30 @@ public class Video extends Activity implements OnClickListener,
 		super.onCreate(savedInstanceState);
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		setContentView(R.layout.photo_camera);
-		Paint paint = new Paint();
-		ColorMatrix matrix = new ColorMatrix();
-		matrix.setSaturation(0);
-		paint.setColorFilter(new ColorMatrixColorFilter(matrix));
-		getWindow().getDecorView().setLayerType(View.LAYER_TYPE_HARDWARE, paint);
-		initDataResource();
+		setContentView(R.layout.photo_camera2);
+		InitDataResource();
 		requestPower();
 		saveControl = new MediaCodecSaveControl(this, VIDEO_PRE_DURATION);
 		encodeCenter = new MediaCodecCenter(this);
 		encodeCenter.setCenterCallback(this);
-
+		cameraOpenHelper = new CameraOpenHelper(this, textureView, new Size(VIDEO_WIDTH, VIDEO_HEIGHT));
+		cameraOpenHelper.setFrameCallback(this);
 	}
 
-	private void initDataResource() {
+	private void InitDataResource() {
 		Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
 		Camera.getCameraInfo(Camera.CameraInfo.CAMERA_FACING_BACK, cameraInfo);
 		Log.w(TAG, "camera orientation " + cameraInfo.orientation);
-		orientation = cameraInfo.orientation;
 
-		YuvWaterMark.init(VIDEO_WIDTH, VIDEO_HEIGHT, orientation);
+		YuvWaterMark.init(VIDEO_WIDTH, VIDEO_HEIGHT, 0);
 		startOrStopIcon = findViewById(R.id.start_or_stop_icon);
-		mSurfaceView = findViewById(R.id.surface);
-		mSurfaceView.getHolder().addCallback(this);
+		textureView = findViewById(R.id.surface);
+		textureView.getHolder().addCallback(this);
+//		textureView.setSurfaceTextureListener(this);
 		startOrStopIcon.setOnClickListener(this);
 		startOrStopIcon.setImageResource(isRecording ? R.drawable.ic_video_session_stop : R.drawable.ic_video_session_start);
 		findViewById(R.id.cut_icon).setOnClickListener(this);
 		long start = SystemClock.uptimeMillis();
-
-		Point outSize = new Point();
-		WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-		windowManager.getDefaultDisplay().getRealSize(outSize);
-		int width = outSize.x;
-		int height;
-		if (orientation == 90 || orientation == 270) {
-			height = width * VIDEO_WIDTH / VIDEO_HEIGHT;
-		} else if (orientation == 0 || orientation == 180) {
-			height = width * VIDEO_HEIGHT / VIDEO_WIDTH;
-		} else {
-			height = outSize.y;
-		}
-		Log.w(TAG, "init surface " + width + "*" + height);
-		FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) mSurfaceView.getLayoutParams();
-		layoutParams.width = width;
-		layoutParams.height = height;
-		layoutParams.gravity = Gravity.CENTER;
-		mSurfaceView.setLayoutParams(layoutParams);
 
 		YuvWaterMark.addWaterMark(2, 100, 130, "上海市闵行区秀文路898号", 20);
 
@@ -184,71 +152,15 @@ public class Video extends Activity implements OnClickListener,
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		if (camera != null) {
-			camera.setPreviewCallback(null);
-			camera.stopPreview();
-			camera.release();
-			camera = null;
+		if (cameraOpenHelper != null) {
+			cameraOpenHelper.closeCamera();
+			cameraOpenHelper = null;
 			stopEncoder();
 		}
 		if (timer != null) {
 			timer.cancel();
 		}
 		YuvWaterMark.release();
-	}
-
-	@Override
-	public void surfaceCreated(SurfaceHolder holder) {
-		Log.w(TAG, "surfaceCreated");
-		try {
-			if (camera == null) {
-				camera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
-			}
-			if (camera != null) {
-				camera.setPreviewDisplay(holder);
-				Parameters params = camera.getParameters();
-				params.setPreviewFormat(ImageFormat.NV21);// 图片格式
-
-				List<Camera.Size> previews = params.getSupportedPreviewSizes();
-				for (Camera.Size size : previews) {
-					Log.i(TAG, "support size " + size.width + "*" + size.height);
-				}
-				List<int[]> rangs = params.getSupportedPreviewFpsRange();
-				for (int[] rang : rangs) {
-					Log.i(TAG, "support rang " + Arrays.toString(rang));
-				}
-				params.setPreviewSize(VIDEO_WIDTH, VIDEO_HEIGHT);
-				params.setPreviewFpsRange(VIDEO_FRAME * 1000, VIDEO_FRAME * 1000);
-				params.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-				params.setColorEffect(Parameters.EFFECT_MONO);
-				camera.setDisplayOrientation(orientation);
-				camera.setParameters(params);
-				camera.setPreviewCallback(this);
-				camera.startPreview();
-				camera.autoFocus(this);
-				camera.cancelAutoFocus();
-				startEncoder();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
-	}
-
-	@Override
-	public void surfaceDestroyed(SurfaceHolder holder) {
-		Log.w(TAG, "surfaceDestroyed");
-		if (camera != null) {
-			camera.setPreviewCallback(null);
-			camera.stopPreview();
-			camera.release();
-			camera = null;
-			stopEncoder();
-		}
 	}
 
 	public void requestPower() {
@@ -272,11 +184,7 @@ public class Video extends Activity implements OnClickListener,
 			mExecutor = Executors.newSingleThreadExecutor();
 		}
 		try {
-			if (orientation == 90 || orientation == 270) {
-				encodeCenter.init(VIDEO_HEIGHT, VIDEO_WIDTH, VIDEO_FRAME, VIDEO_FRAME * VIDEO_WIDTH * VIDEO_HEIGHT / 8);
-			} else {
-				encodeCenter.init(VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_FRAME, VIDEO_FRAME * VIDEO_WIDTH * VIDEO_HEIGHT / 8);
-			}
+			encodeCenter.init(VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_FRAME, VIDEO_FRAME * VIDEO_WIDTH * VIDEO_HEIGHT / 8);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -286,14 +194,14 @@ public class Video extends Activity implements OnClickListener,
 
 	private void stopEncoder() {
 		isEncoding = false;
-		curHandler.removeMessages(11);
+		curHandler.removeMessages(VIDEO_CUTOFF_MESSAGE);
 	}
 
 	private void startRecording() {
 		if (saveControl != null) {
 			isRecording = true;
 			saveControl.startSaveVideo();
-			curHandler.sendEmptyMessageDelayed(11, VIDEO_CUTOFF_DURATION);
+			curHandler.sendEmptyMessageDelayed(VIDEO_CUTOFF_MESSAGE, VIDEO_CUTOFF_DURATION);
 		}
 	}
 
@@ -307,7 +215,7 @@ public class Video extends Activity implements OnClickListener,
 	private void cut() {
 		if (saveControl != null && isRecording) {
 			saveControl.cutOffMediaSave();
-			curHandler.sendEmptyMessageDelayed(11, VIDEO_CUTOFF_DURATION);
+			curHandler.sendEmptyMessageDelayed(VIDEO_CUTOFF_MESSAGE, VIDEO_CUTOFF_DURATION);
 		}
 	}
 
@@ -388,56 +296,31 @@ public class Video extends Activity implements OnClickListener,
 	private long addMarkUseMillis = 0;
 	private int count = 0;
 
-	@Override
 	public void onPreviewFrame(byte[] data, Camera camera) {
-
 		if (data != null && encodeCenter != null && isEncoding) {
 //			Log.w(TAG, "onPreviewFrame " + (System.currentTimeMillis() - lastPreviewFrameMillis));
 //			lastPreviewFrameMillis = System.currentTimeMillis();
-			byte[] nv12 = new byte[data.length];
-			long start = SystemClock.uptimeMillis();
-			YuvWaterMark.addMark(data, nv12);
-			long time = SystemClock.uptimeMillis() - start;
-			addMarkUseMillis += time;
-			count++;
-			Log.w(TAG, "add water mark time=" + time + " ms " + addMarkUseMillis / count);
-			encodeCenter.feedVideoFrameData(nv12);
+			addWaterMark(data);
 		}
 	}
 
-	private static void NV21ToNV12(byte[] nv21, byte[] nv12, int width, int height) {
-		if (nv21 == null || nv12 == null) {
-			return;
-		}
-		int frameSize = width * height;
-		System.arraycopy(nv21, 0, nv12, 0, frameSize);
-		for (int j = 0; j < frameSize / 2; j += 2) {
-			nv12[frameSize + j - 1] = nv21[j + frameSize];
-		}
-		for (int j = 0; j < frameSize / 2; j += 2) {
-			nv12[frameSize + j] = nv21[j + frameSize - 1];
-		}
+	private void addWaterMark(byte[] data) {
+		byte[] nv12 = new byte[data.length];
+		long start = SystemClock.uptimeMillis();
+		YuvWaterMark.addMark(data, nv12);
+		long time = SystemClock.uptimeMillis() - start;
+		addMarkUseMillis += time;
+		count++;
+		Log.w(TAG, "add water mark time=" + time + " ms " + addMarkUseMillis / count);
+		encodeCenter.feedVideoFrameData(nv12);
 	}
 
 	@Override
 	public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
 		Log.w(TAG, "surfaceCreated");
 		try {
-			if (camera == null) {
-				camera = Camera.open();
-			}
-			if (camera != null) {
-				camera.setPreviewTexture(surface);
-				Parameters params = camera.getParameters();
-				params.setPreviewFormat(ImageFormat.NV21);// 图片格式
-				params.setPreviewSize(1920, 1080);
-				params.setPreviewFpsRange(VIDEO_FRAME, VIDEO_FRAME);
-				params.setColorEffect(Parameters.EFFECT_MONO);
-				camera.setParameters(params);
-				camera.setPreviewCallback(this);
-				camera.startPreview();
-				startEncoder();
-			}
+			cameraOpenHelper.openCamera();
+			startEncoder();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -451,11 +334,9 @@ public class Video extends Activity implements OnClickListener,
 	@Override
 	public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
 		Log.w(TAG, "surfaceDestroyed");
-		if (camera != null) {
-			camera.setPreviewCallback(null);
-			camera.stopPreview();
-			camera.release();
-			camera = null;
+		if (cameraOpenHelper != null) {
+			cameraOpenHelper.closeCamera();
+			cameraOpenHelper = null;
 			stopEncoder();
 		}
 		return false;
@@ -467,83 +348,40 @@ public class Video extends Activity implements OnClickListener,
 	}
 
 	@Override
-	public void onAutoFocus(boolean success, Camera camera) {
-		Log.w(TAG, "onAutoFocus " + success);
-//		Camera.Parameters params = camera.getParameters(); //有时对焦失败重新设置对焦模式
-//		params.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-//		camera.setParameters(params);
+	public void surfaceCreated(SurfaceHolder holder) {
+		Log.w(TAG, "surfaceCreated");
+		try {
+			if (cameraOpenHelper != null) {
+				cameraOpenHelper.openCamera();
+				startEncoder();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
-//	public static byte[] rotateYUV420Degree90(byte[] data, int imageWidth, int imageHeight) {
-//		byte[] yuv = new byte[imageWidth * imageHeight * 3 / 2];
-//		int i = 0;
-//		for (int x = 0; x < imageWidth; x++) {
-//			for (int y = imageHeight - 1; y >= 0; y--) {
-//				yuv[i] = data[y * imageWidth + x];
-//				i++;
-//			}
-//		}
-//		i = imageWidth * imageHeight * 3 / 2 - 1;
-//		for (int x = imageWidth - 1; x > 0; x = x - 2) {
-//			for (int y = 0; y < imageHeight / 2; y++) {
-//				yuv[i] = data[(imageWidth * imageHeight) + (y * imageWidth) + x];
-//				i--;
-//				yuv[i] = data[(imageWidth * imageHeight) + (y * imageWidth)
-//						+ (x - 1)];
-//				i--;
-//			}
-//		}
-//		return yuv;
-//	}
-//
-//	private static byte[] rotateYUV420Degree180(byte[] data, int imageWidth, int imageHeight) {
-//		byte[] yuv = new byte[imageWidth * imageHeight * 3 / 2];
-//		int i = 0;
-//		int count = 0;
-//		for (i = imageWidth * imageHeight - 1; i >= 0; i--) {
-//			yuv[count] = data[i];
-//			count++;
-//		}
-//		i = imageWidth * imageHeight * 3 / 2 - 1;
-//		for (i = imageWidth * imageHeight * 3 / 2 - 1; i >= imageWidth
-//				* imageHeight; i -= 2) {
-//			yuv[count++] = data[i - 1];
-//			yuv[count++] = data[i];
-//		}
-//		return yuv;
-//	}
-//
-//	public static byte[] rotateYUV420Degree270(byte[] data, int imageWidth,
-//											   int imageHeight) {
-//		byte[] yuv = new byte[imageWidth * imageHeight * 3 / 2];
-//		int nWidth = 0, nHeight = 0;
-//		int wh = 0;
-//		int uvHeight = 0;
-//		if (imageWidth != nWidth || imageHeight != nHeight) {
-//			nWidth = imageWidth;
-//			nHeight = imageHeight;
-//			wh = imageWidth * imageHeight;
-//			uvHeight = imageHeight >> 1;// uvHeight = height / 2
-//		}
-//
-//		int k = 0;
-//		for (int i = 0; i < imageWidth; i++) {
-//			int nPos = 0;
-//			for (int j = 0; j < imageHeight; j++) {
-//				yuv[k] = data[nPos + i];
-//				k++;
-//				nPos += imageWidth;
-//			}
-//		}
-//		for (int i = 0; i < imageWidth; i += 2) {
-//			int nPos = wh;
-//			for (int j = 0; j < uvHeight; j++) {
-//				yuv[k] = data[nPos + i];
-//				yuv[k + 1] = data[nPos + i + 1];
-//				k += 2;
-//				nPos += imageWidth;
-//			}
-//		}
-//		return rotateYUV420Degree180(rotateYUV420Degree90(data, imageWidth, imageHeight), imageWidth, imageHeight);
-//	}
+	@Override
+	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+	}
+
+	@Override
+	public void surfaceDestroyed(SurfaceHolder holder) {
+		Log.w(TAG, "surfaceDestroyed");
+		if (cameraOpenHelper != null) {
+			cameraOpenHelper.closeCamera();
+			cameraOpenHelper = null;
+			stopEncoder();
+		}
+	}
+
+	@Override
+	public void onFrame(byte[] data) {
+		Log.w(TAG, "onFrame");
+		if (data != null && encodeCenter != null && isEncoding) {
+//			Log.w(TAG, "onPreviewFrame " + (System.currentTimeMillis() - lastPreviewFrameMillis));
+//			lastPreviewFrameMillis = System.currentTimeMillis();
+			addWaterMark(data);
+		}
+	}
 }

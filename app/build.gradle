@@ -1,17 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-//    signingConfigs {
-//        release {
-//            keyAlias 'android'
-//            keyPassword '123456'
-//            storeFile file('C:/Users/tisen/Documents/ti.jks')
-//            storePassword '123456'
-//        }
-//    }
+
     compileSdkVersion 27
     defaultConfig {
-        applicationId "com.vanzo.demo"
+        applicationId "com.zts.yuvdemo"
         minSdkVersion 23
         targetSdkVersion 27
         versionCode 3
@@ -50,7 +43,7 @@ android {
     productFlavors {
         Demo {
             manifestPlaceholders = [
-                    sharedUserId: "com.vanzo"
+                    sharedUserId: "com.zts"
             ]
         }
 //        System {
@@ -64,8 +57,15 @@ android {
     externalNativeBuild {
         cmake {
             path file('CMakeLists.txt')
+            version "3.18.1"
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    ndkVersion '22.1.7171670'
+    buildToolsVersion '30.0.0'
 }
 
 dependencies {
